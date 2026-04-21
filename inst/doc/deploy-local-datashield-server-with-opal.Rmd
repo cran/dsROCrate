@@ -1,0 +1,76 @@
+---
+title: "Deploy a local DataSHIELD server with Opal"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Deploy a local DataSHIELD server with Opal}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  cache = FALSE
+)
+```
+
+
+```{r}
+#| echo: false
+#| label: setup
+library(dsROCrate)
+```
+
+### What is Opal?
+
+> Opal is [OBiBa](https://www.obiba.org/)’s core database application for epidemiological studies. Participant data, collected by questionnaires, medical instruments, sensors, administrative databases etc. can be integrated and stored in a central data repository under a uniform model. Opal is a web application that can import, process, copy data and has advanced features for cataloguing the data (fully described, annotated and searchable data dictionaries) as recommended by the [Maelstrom Research](https://www.maelstrom-research.org/) group at McGill University, Canada. Opal is typically used by a research centre to analyse the data acquired from assessment centres. Its ultimate purpose is to achieve seamless data-sharing among epidemiological studies. Opal is the reference implementation of the [DataSHIELD](https://datashield.org/) infrastructure. More information on Opal can be found in the [Opal description on OBiBa](https://www.obiba.org/pages/products/opal/).
+
+**Source:** [https://isglobal-brge.github.io/resource_bookdown/opal.html](https://isglobal-brge.github.io/resource_bookdown/opal.html)
+
+### Deploy Docker containers
+Here we will spawn a local instance of [DataSHIELD](https://datashield.org) with 
+[Docker](https://www.docker.com). We will assume you have installed and
+configured Docker on your computer; however, if that's not the case, visit their
+[get started with Docker](https://www.docker.com/get-started/) page.
+
+#### Set up
+The easiest way to deploy DataSHIELD with docker is by cloning the following
+repo: [OllyButters/datashield_pcr](https://github.com/OllyButters/datashield_pcr).
+Here, you will find a step by step guide, including a very useful
+[`docker-compose.yml`](https://github.com/OllyButters/datashield_pcr/blob/main/docker/docker-compose.yml) 
+file, which you can use out of the box.
+
+If you are running Linux or macOS, you can run the following commands:
+
+```sh
+git clone https://github.com/OllyButters/datashield_pcr
+cd datashield_pcr/docker
+docker compose up -d
+```
+
+Then you can inspect the Docker GUI, where you should see something like the
+following:
+
+<img src="../man/figures/ds_docker_compose.png" alt="Docker conf" height=200px/>
+
+
+---------
+
+#### Open connection
+
+By default, the [`docker-compose.yml`](https://github.com/OllyButters/datashield_pcr/blob/main/docker/docker-compose.yml) 
+file in the repo above defines a demo user, `demo_user`, with the following 
+password: `Demo_password1!` (edit the variables `OPAL_DEMO_USER_NAME` and
+`OPAL_DEMO_USER_PASSWORD` accordingly). Here, we will open a connection to our
+local server using these credentials:
+
+```{r}
+# define global variables
+USERNAME <- "demo_user"
+USERPASS <- "Demo_password1!"
+PROJECT <- "DEMO"
+TABLES <- c("CNSIM1")
+SERVER <- "https://opal-demo.obiba.org"
+PROFILE <- "demo"
+```

@@ -1,0 +1,29 @@
+citHeader("To cite {dsROCrate} in publications use:")
+
+citation(auto = meta)
+
+bibentry(
+  bibtype = "Misc",
+  key     = "focus5_2026",
+  title   = "FOCUS-5: The feasibility of RO-Crates as a standards-based framework for auditing federated analyses and projects",
+  author  = c(
+    person("Becca", "Wilson"),
+    person("Olly", "Butters"),
+    person("Vishnu Vardhan", "Chandrabalan"),
+    person("Dale", "Kirkwood"),
+    person("Matt", "Stammers"),
+    person("Mike", "Harding"),
+    person("Jake", "Harrington"),
+    person("Paula", "Irving"),
+    person("Yannick", "Marcon"),
+    person("Jamie", "O'Brien"),
+    person("Pawel", "Szmajda"),
+    person("Alwin K", "Thomas"),
+    person("Roberto", "Villegas-Diaz"),
+    person("Stuart", "Wheater")
+  ),
+  year = "2026",
+  note = "Zenodo report associated with the dsROCrate R package",
+  doi  = "10.5281/zenodo.19366020",
+  url  = "https://zenodo.org/doi/10.5281/zenodo.19366020"
+)
