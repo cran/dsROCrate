@@ -1,3 +1,10 @@
+# dsROCrate (development version)
+
+# dsROCrate 0.0.2
+
+* This patch addresses an issue with the vignettes. The `safe_output.opal()` S3
+generic now uses `overwrite = TRUE` to update the root (`./`) entity.
+
 # dsROCrate 0.0.1
 
 * Initial CRAN submission.

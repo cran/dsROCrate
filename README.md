@@ -8,7 +8,6 @@
 [![CRAN
 status](https://www.r-pkg.org/badges/version/dsROCrate)](https://CRAN.R-project.org/package=dsROCrate)
 [![R-CMD-check](https://github.com/FederatedMethods/dsROCrate/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/FederatedMethods/dsROCrate/actions/workflows/R-CMD-check.yaml)
-<!-- [![Codecov test coverage](https://codecov.io/gh/FederatedMethods/dsROCrate/graph/badge.svg)](https://app.codecov.io/gh/FederatedMethods/dsROCrate) -->
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->

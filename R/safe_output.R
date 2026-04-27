@@ -395,7 +395,8 @@ safe_output.opal <- function(
           list(`@id` = log_entity$`@id`),
           list(`@id` = log_maps_entity$`@id`)
         )
-      )
+      ),
+      overwrite = TRUE
     )
 
   # attach input arguments as attributes

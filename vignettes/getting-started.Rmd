@@ -73,6 +73,10 @@ rocrate_txt <- function(rocrate) {
 
 ```{r setup}
 library(dsROCrate)
+
+# show all the lines in the RO-Crate
+oopt <- options(max_lines = Inf)
+on.exit(options(oopt), add = TRUE)
 ```
 
 This tutorial assumes that you have an internet connection and can access 
@@ -503,4 +507,6 @@ study_crate_v1 |>
 unlink(safe_people_crate_v1_rmd, TRUE, TRUE)
 unlink(safe_project_crate_v1_rmd, TRUE, TRUE)
 unlink(study_crate_v1_rmd, TRUE, TRUE)
+# reverse options
+options(oopt)
 ```

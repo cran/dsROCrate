@@ -64,6 +64,10 @@ rocrate_txt <- function(rocrate) {
 ## ----setup--------------------------------------------------------------------
 library(dsROCrate)
 
+# show all the lines in the RO-Crate
+oopt <- options(max_lines = Inf)
+on.exit(options(oopt), add = TRUE)
+
 ## ----eval = FALSE-------------------------------------------------------------
 # vignette("deploy-local-datashield-server-with-opal", package = "dsROCrate")
 
@@ -324,4 +328,6 @@ safe_project_crate_contents$overview_data |>
 unlink(safe_people_crate_v1_rmd, TRUE, TRUE)
 unlink(safe_project_crate_v1_rmd, TRUE, TRUE)
 unlink(study_crate_v1_rmd, TRUE, TRUE)
+# reverse options
+options(oopt)
 

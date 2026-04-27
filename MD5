@@ -1,7 +1,7 @@
-e1cdcb97dbc539626e335e4309237c6c *DESCRIPTION
+b14df1c0081976c28fb87c059b2ede5e *DESCRIPTION
 ac83ec0a024d2cfce6d849d6c68fdc2d *LICENSE
 97b1ad910272e887ca091cff810e1db2 *NAMESPACE
-a5b1668df979a3d1f3f45d07e45571d8 *NEWS.md
+aff8a491b50c3339926eb0d5e432072a *NEWS.md
 b1ff63ed84ae49316314773c677d3fa1 *R/audit.R
 a867fe179e657a1e4d17000c976fcae5 *R/audit_engine.R
 b15ddc893c2ddc5dce30d816f90d83c6 *R/dsROCrate-package.R
@@ -9,7 +9,7 @@ b15ddc893c2ddc5dce30d816f90d83c6 *R/dsROCrate-package.R
 9846b78bcf8acb6bc060d250b693e1ee *R/print.R
 2a44eeacce4fc115619042c18c2c6413 *R/report.R
 baa7c407dd288a6a358449d28100e4c4 *R/safe_data.R
-10100274bb7ef7477f6216caab778f3b *R/safe_output.R
+38969c6a9b73351e5d5277190b409705 *R/safe_output.R
 a7d014d953b6307580813342320f21a8 *R/safe_people.R
 a27e7e4457dc9ed2228fd87afc87a50b *R/safe_project.R
 000060fb2dbec0e79c22ced968b09f3b *R/safe_setting.R
@@ -29,16 +29,16 @@ d0b054741d2e39c53a1e1727a36ddc61 *R/utils-safe_output.R
 7db44753f4405b1c0636fbea2601b956 *R/utils-safe_setting.R
 a57b9355418be13b1dbb92c6acea692d *R/utils-tibble.R
 caa17d14bb71a1a2043a334869589077 *R/zzz.R
-74485e7b867e6fb9de8507bd554c7ea5 *README.md
+b9338b126718303eb80a258e2f075875 *README.md
 a8c510bb4eda7c23c9388b5797cb3a85 *build/vignette.rds
 68dfb9da56a77cecb189ec5aacbe9c80 *inst/CITATION
 965277b4f5664310febca1d988678c75 *inst/WORDLIST
 e10633d26aa65f2ad6505a2d2ae7a821 *inst/doc/deploy-local-datashield-server-with-opal.R
 7b377c1eab1889ac31d17080eab0f7c7 *inst/doc/deploy-local-datashield-server-with-opal.Rmd
 0ebd281fa77fdecf048b188c9570c74d *inst/doc/deploy-local-datashield-server-with-opal.html
-b33ceb947992a3bd0b07898cb00c7dbd *inst/doc/getting-started.R
-98a726bf2ad7fcc4274498a441f2582d *inst/doc/getting-started.Rmd
-1baf49c83e542d66cb63ff474427250c *inst/doc/getting-started.html
+4b76cf79198febbbec4edda95a1e7874 *inst/doc/getting-started.R
+500c608d341b17c88794e67ba636b033 *inst/doc/getting-started.Rmd
+5f1585057b54d3d41d3efb3e51950c56 *inst/doc/getting-started.html
 97c1bea6205ae4eea104a93f99572565 *man/append_entity_ref.Rd
 f1525754bf899835c18b884458bfde11 *man/armadillo_login.Rd
 940226808baaef48f348a1beedbef9be *man/audit.Rd
@@ -103,4 +103,4 @@ d0bb6937248e4542d183feae6ae43000 *tests/testthat/test-utils-safe_output.R
 61716bb9f97c048dd5b7de10facc30cb *tests/testthat/test-utils-safe_setting.R
 d8e7d5d70d1d1ee20cb214d6693a5458 *tests/testthat/test-utils-tibble.R
 7b377c1eab1889ac31d17080eab0f7c7 *vignettes/deploy-local-datashield-server-with-opal.Rmd
-98a726bf2ad7fcc4274498a441f2582d *vignettes/getting-started.Rmd
+500c608d341b17c88794e67ba636b033 *vignettes/getting-started.Rmd
