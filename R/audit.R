@@ -29,7 +29,17 @@
 #' @param ... Additional arguments.
 #' @param intent Additional object with governance bundle/specification of the
 #'     intent of a project. It takes the same types as `x`.
-#' @inheritParams audit_engine
+#' @param project String with project name(s) from which to extra Safe Project
+#'     details.
+#' @param user String with the user name for which to extract Safe People
+#'     details.
+#' @param logs_from Lower limit timestamp to filter out the outputs generated
+#'     (default: `-Inf`, everything up to `logs_to`)
+#' @param logs_to Upper limit timestamp to filter out the outputs generated
+#'     (default: `Inf`, everything from `logs_from` onwards).
+#' @param path String with path pointing to the root of the RO-Crate. This will
+#'     be used to store log files. If not provided, logs will be stored within
+#'     the RO-Crate returned by this function.
 #'
 #' @returns RO-Crate with audit details.
 #' @export

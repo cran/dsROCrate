@@ -93,6 +93,7 @@ safe_output.opal <- function(
   # local bindings
   `@timestamp` <- backend <- logger_name <- safe_people_id <- username <- NULL
   ds_action <- ds_eval <- ds_id <- ds_function <- ds_symbol <- ds_table <- NULL
+  is_placeholder <- NULL
 
   # create formatted versions of input dates
   logs_from_is_valid <- FALSE
@@ -134,11 +135,8 @@ safe_output.opal <- function(
     format(as.POSIXct(logs_to), '%Y-%m-%d %H:%M:%S')
   )
 
-  # x is a valid opal connection object
-  validate_opal_con(x)
-
-  # validate that connection user has administrative rights
-  is_opal_admin_con(x)
+  # validate backend
+  validate_backend(x, ...)
 
   # verify if `user` is NULL, if so, retrieve information from the RO-crate
   if (is.null(user)) {
@@ -271,6 +269,9 @@ safe_output.opal <- function(
   ## evaluated functions and tables/symbols mapped
   userlogs_tbl_maps_evals <- userlogs_tbl |>
     dplyr::filter(ds_action %in% c("ASSIGN", "AGGREGATE", "OPEN")) |>
+    # add place-holder column, for when ro records are found
+    dplyr::bind_rows(tibble::tibble(ds_table = NA, is_placeholder = TRUE)) |>
+    dplyr::filter(is.na(is_placeholder)) |>
     # create derived `ds_eval` when `ds_action` = 'ASSIGN'
     dplyr::mutate(
       ds_eval = dplyr::coalesce(

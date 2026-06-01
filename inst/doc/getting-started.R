@@ -66,7 +66,6 @@ library(dsROCrate)
 
 # show all the lines in the RO-Crate
 oopt <- options(max_lines = Inf)
-on.exit(options(oopt), add = TRUE)
 
 ## ----eval = FALSE-------------------------------------------------------------
 # vignette("deploy-local-datashield-server-with-opal", package = "dsROCrate")
@@ -178,18 +177,58 @@ builder$append(server = "study1",
 logindata <- builder$build()
 conns <- DSI::datashield.login(logins = logindata)
 
-## ----eval = TRUE--------------------------------------------------------------
-## assign data
-DSI::datashield.assign.table(conns["study1"], 
-                             symbol = "dsROCrate_test",
-                             table = paste0(PROJECT, ".", TABLES[1]),
-                             errors.print = TRUE)
+## ----eval = FALSE-------------------------------------------------------------
+# ## assign data
+# DSI::datashield.assign.table(conns["study1"],
+#                              symbol = "dsROCrate_test",
+#                              table = paste0(PROJECT, ".", TABLES[1]),
+#                              errors.print = TRUE)
+# 
+# dsBaseClient::ds.ls(datasources = conns["study1"])
+# #> $study1
+# #> $study1$environment.searched
+# #> [1] "R_GlobalEnv"
+# #>
+# #> $study1$objects.found
+# #> [1] "dsROCrate_test"
+# dsBaseClient::ds.summary("dsROCrate_test")
+# #> $study1
+# #> $study1$class
+# #> [1] "data.frame"
+# #>
+# #> $study1$`number of rows`
+# #> [1] 2163
+# #>
+# #> $study1$`number of columns`
+# #> [1] 11
+# #>
+# #> $study1$`variables held`
+# #>  [1] "LAB_TSC"            "LAB_TRIG"           "LAB_HDL"
+# #>  [4] "LAB_GLUC_ADJUSTED"  "PM_BMI_CONTINUOUS"  "DIS_CVA"
+# #>  [7] "MEDI_LPD"           "DIS_DIAB"           "DIS_AMI"
+# #> [10] "GENDER"             "PM_BMI_CATEGORICAL"
 
-dsBaseClient::ds.ls(datasources = conns["study1"])
-dsBaseClient::ds.summary("dsROCrate_test")
-
-## ----echo = FALSE, warning = FALSE, message = FALSE---------------------------
+## ----echo = FALSE, warning = FALSE, message = FALSE, results='hide'-----------
 # check if there are any logs available, if not simulate some operations
+dsuser_logs_tbl <- opalr::opal.login(
+    username = "administrator",
+    password = "password",
+    url = SERVER
+) |> 
+  opalr::dsadmin.log() |>
+  dplyr::bind_rows(tibble::tibble(username = NA, ds_action = NA)) |>
+  dplyr::filter(!is.na(username), username == "dsuser") |>
+  dplyr::filter(ds_action %in% c("ASSIGN", "AGGREGATE", "OPEN"))
+
+if (nrow(dsuser_logs_tbl) < 1) {
+  ## assign data
+  DSI::datashield.assign.table(conns["study1"], 
+                               symbol = "dsROCrate_test",
+                               table = paste0(PROJECT, ".", TABLES[1]),
+                               errors.print = TRUE)
+  dsBaseClient::ds.ls(datasources = conns["study1"])
+  dsBaseClient::ds.summary("dsROCrate_test")
+}
 
 ## ----safe_outputs_internal, echo=FALSE----------------------------------------
 lines_before_safe_outputs <- rocrate_lines(basic_rocrate)
@@ -197,17 +236,17 @@ lines_before_safe_outputs <- rocrate_lines(basic_rocrate)
 ## ----safe_outputs-------------------------------------------------------------
 basic_rocrate <- o |>
   dsROCrate::safe_output(rocrate = basic_rocrate,
-                         logs_from = Sys.time() - 60, # capture the last minute
+                         logs_from = Sys.time() - 8.64E4, # capture the last 24 hours
                          logs_to = Sys.time())
 
-## ----out.lines=-(lines_before_safe_outputs + 1)-------------------------------
+## ----out.lines=-(lines_before_safe_outputs + 6)-------------------------------
 print(basic_rocrate) # note that the output will be truncated
 
 ## -----------------------------------------------------------------------------
 opalr::opal.logout(o)
 
 ## -----------------------------------------------------------------------------
-# create temp directory
+# create temp directory (only for demo purposes)
 tmp_path_bag <- file.path(tempdir(), "dsROCrate-getting-started")
 dir.create(tmp_path_bag, showWarnings = FALSE)
 
@@ -225,6 +264,10 @@ path_to_rocrate_bag |>
 
 ## -----------------------------------------------------------------------------
 unlink(tmp_path_bag, recursive = TRUE, force = TRUE)
+
+## ----echo = FALSE-------------------------------------------------------------
+options(oopt)
+oopt <- options(max_lines = 40)
 
 ## ----warning=FALSE------------------------------------------------------------
 safe_people_crate_v1 <- opalr::opal.login(
@@ -292,7 +335,7 @@ study_crate_v1 <-
     "opal_test" = opalr::opal.login(
       username = USERNAME,
       password = USERPASS,
-      url = "https://opal-test.obiba.org"
+      url = "https://opal-demo.obiba.org"
     ),
     "opal_demo" = opalr::opal.login(
       username = USERNAME,

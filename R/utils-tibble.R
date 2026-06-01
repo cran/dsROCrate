@@ -5,6 +5,7 @@
 #'
 #' @returns Unfilled vector.
 #' @keywords internal
+#' @noRd
 #' @source https://github.com/tidyverse/tidyr/issues/250#issuecomment-344984802
 unfill_vec <- function(x, val = "") {
   same <- x == dplyr::lag(x)
@@ -18,6 +19,7 @@ unfill_vec <- function(x, val = "") {
 #'
 #' @returns Filled vector.
 #' @keywords internal
+#' @noRd
 refill_vec <- function(x, val = "") {
   for (i in seq_along(x)) {
     if (i > 1 && (is.na(x[i]) || x[i] == val)) {

@@ -5,6 +5,7 @@
 #'
 #' @returns Update `rocrate` object.
 #' @keywords internal
+#' @noRd
 load_content <- function(rocrate, roc_path) {
   # get 'File' entities with missing `content` (if any)
   file_ents <- rocrate |>

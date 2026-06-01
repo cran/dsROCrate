@@ -54,8 +54,8 @@ init.opal <- function(
   path = NULL,
   user = NULL
 ) {
-  # x is a valid opal connection object
-  validate_opal_con(x)
+  # validate backend
+  validate_backend(x, ...)
 
   # attach input arguments as attributes
   attr(rocrate, "connection") <- x

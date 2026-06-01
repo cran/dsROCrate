@@ -21,11 +21,11 @@
 #'
 #' @returns Audit RO-Crate with 5 Safes Components.
 #' @keywords internal
+#' @noRd
 audit_engine <- function(x, ...) {
   UseMethod("audit_engine")
 }
 
-#' @rdname audit_engine
 #' @export
 audit_engine.cr8tor <- function(x, ...) {
   # extract individual components from cr8tor bundle
@@ -46,7 +46,6 @@ audit_engine.cr8tor <- function(x, ...) {
   as_rocrate_audit(audit)
 }
 
-#' @rdname audit_engine
 #' @export
 audit_engine.opal <- function(
   x,
@@ -58,21 +57,21 @@ audit_engine.opal <- function(
   path = NULL
 ) {
   # local bindings
-  name <- principal <- NULL
+  name <- permission <- principal <- NULL
 
   # create RO-Create with the 5 safes profile
   crate <- rocrateR::rocrate_5s()
 
-  # validate Opal connection
-  is_opal_admin_con(x)
+  # validate backend
+  validate_backend(x, ...)
 
   # if `project` is missing, then ~extract all project names~ error
   if (is.null(project)) {
     stop("A `project` name is required!", call. = FALSE)
   }
 
-  # extract all data sources to verify `project` contains a valid value.
-  ds <- opalr::opal.datasources(x)
+  # extract list with all projects to verify `project` contains a valid value
+  ds <- opalr::opal.projects(x)
   server_prjs <- ds[, "name"]
   idx <- project %in% server_prjs
   if (!all(idx)) {
@@ -92,6 +91,22 @@ audit_engine.opal <- function(
     dplyr::rename(name = principal) |>
     # exclude system administrators from the report
     dplyr::filter(!(tolower(name) %in% c("admin", "administrator")))
+
+  # if any users were found, then verify if they are admin/auditors and exclude
+  if (nrow(safe_people_tbl)) {
+    # extract system permissions
+    sys_perms_tbl <- opalr::oadmin.system_perm(x)
+    safe_people_tbl <- tryCatch(
+      {
+        safe_people_tbl |>
+          dplyr::left_join(sys_perms_tbl, by = c("name" = "subject")) |>
+          dplyr::filter(!(permission %in% c("administrate", "audit")))
+      },
+      error = function(e) {
+        tibble::tibble()
+      }
+    )
+  }
 
   if (!is.null(user)) {
     safe_people_tbl <- safe_people_tbl |>

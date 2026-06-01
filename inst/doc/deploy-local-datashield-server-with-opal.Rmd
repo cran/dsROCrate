@@ -34,17 +34,17 @@ Here we will spawn a local instance of [DataSHIELD](https://datashield.org) with
 configured Docker on your computer; however, if that's not the case, visit their
 [get started with Docker](https://www.docker.com/get-started/) page.
 
-#### Set up
+#### Setup
 The easiest way to deploy DataSHIELD with docker is by cloning the following
-repo: [OllyButters/datashield_pcr](https://github.com/OllyButters/datashield_pcr).
+repo: [FederatedMethods/datashield_dev_install](https://github.com/FederatedMethods/datashield_dev_install).
 Here, you will find a step by step guide, including a very useful
-[`docker-compose.yml`](https://github.com/OllyButters/datashield_pcr/blob/main/docker/docker-compose.yml) 
+[`docker-compose.yml`](https://github.com/FederatedMethods/datashield_dev_install/blob/main/docker/docker-compose.yml) 
 file, which you can use out of the box.
 
 If you are running Linux or macOS, you can run the following commands:
 
 ```sh
-git clone https://github.com/OllyButters/datashield_pcr
+git clone https://github.com/FederatedMethods/datashield_dev_install
 cd datashield_pcr/docker
 docker compose up -d
 ```
@@ -59,7 +59,7 @@ following:
 
 #### Open connection
 
-By default, the [`docker-compose.yml`](https://github.com/OllyButters/datashield_pcr/blob/main/docker/docker-compose.yml) 
+By default, the [`docker-compose.yml`](https://github.com/FederatedMethods/datashield_dev_install/blob/main/docker/docker-compose.yml) 
 file in the repo above defines a demo user, `demo_user`, with the following 
 password: `Demo_password1!` (edit the variables `OPAL_DEMO_USER_NAME` and
 `OPAL_DEMO_USER_PASSWORD` accordingly). Here, we will open a connection to our
@@ -74,3 +74,53 @@ TABLES <- c("CNSIM1")
 SERVER <- "https://opal-demo.obiba.org"
 PROFILE <- "demo"
 ```
+
+--------
+
+#### Test deployment
+
+1. On a web browser, navigate to `http://localhost:8880` <!-- @URLok --> 
+and use the credentials on the `docker-compose.yml` to log in (e.g., `administrator` and `password`).
+       
+2. Inside RStudio (or your preferred IDE), you can test the connection to the local server with the following command (note that you might need to update the `username` and `password`): 
+ 
+     ```r
+     opalr::opal.login( 
+         username = "administrator", 
+         password = "password", 
+         url = "https://localhost:8843/" 
+     )
+     ```
+
+     You should see something like the following:
+     ```bash
+     url: https://localhost:8843  
+     name: localhost  
+     version: 5.2.0  
+     username: administrator 
+     ```
+
+3. (Optional) Next, you can attempt running some commands with `{dsBaseClient}`:
+ 
+    ```r
+     # for setup only 
+     DSOpal::Opal() 
+     # create new login object 
+     builder <- DSI::newDSLoginBuilder() 
+     builder$append(server = "study1", 
+                    url = "https://localhost:8843/", 
+                    user = "administrator", 
+                    password = "password", 
+                    driver = "OpalDriver") 
+     logindata <- builder$build() 
+     conns <- DSI::datashield.login(logins = logindata) 
+      
+     # assign table to symbol, `test` 
+     DSI::datashield.assign.table(conns["study1"],  
+                                  symbol = "test", 
+                                  table = "DEMO.CNSIM1", 
+                                  errors.print = TRUE) 
+      
+     dsBaseClient::ds.ls(datasources = conns["study1"]) 
+     dsBaseClient::ds.summary("test")
+    ```

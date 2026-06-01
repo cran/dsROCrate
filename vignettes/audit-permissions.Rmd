@@ -1,0 +1,133 @@
+---
+title: "Configuring Audit Permissions"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Configuring Audit Permissions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Overview
+
+`{dsROCrate}` requires elevated permissions when auditing backend systems.
+
+Depending on the backend implementation, this may require:
+
+- administrator privileges,
+- audit privileges,
+- or backend-specific read access to system metadata.
+
+Without these permissions, `{dsROCrate}` may be unable to retrieve
+the metadata required for audit and RO-Crate generation workflows.
+
+This vignette describes:
+
+- why elevated permissions are required,
+- how permission validation works,
+- and how to configure supported backends.
+
+
+# Why are elevated permissions required?
+
+`dsROCrate` performs metadata and configuration inspection operations
+against supported backend systems.
+
+These operations may include access to:
+
+- system configuration metadata,
+- authentication configuration,
+- datasource metadata,
+- project metadata,
+- audit-relevant server settings.
+
+Standard user accounts may not have sufficient privileges for these
+operations.
+
+
+# Supported backends
+
+Currently supported backend permission configurations:
+
+- Opal
+
+Future backend-specific instructions may include:
+
+- Armadillo
+
+
+# Opal
+
+**NOTE:** Opal 5.7+ is required, as that's when the _audit_ role was introduced.
+
+## Required permissions
+
+For Opal backends, the connected user must have at least one of:
+
+- administrator privileges, or
+- the `Audit system` permission.
+
+## Configuring an Opal audit user
+
+### Step 1: Log in as an administrator
+
+Log in to the Opal web interface using an administrator account.
+
+### Step 2: Create a user (optional)
+
+If a dedicated audit user does not already exist:
+
+1. Open the **Administration** tab.
+2. Under **Data Access**, select **Users and Groups**.
+3. Create a new user account for auditing purposes.
+
+### Step 3: Grant audit permissions
+
+1. Return to the **Administration** tab.
+2. Under **System**, select **General Settings**.
+3. Open the **Permissions** section.
+4. Click the **+** button.
+5. Select:
+   - **Add user permission**
+6. Enter the username of the audit user.
+7. Select:
+   - **Audit system**
+8. Click **Submit**.
+
+
+--------------------------------------------------------------------------------
+
+# Example usage
+
+```{r eval = FALSE}
+con <- opalr::opal.login(
+  username = "audit_user",
+  password = "secret",
+  url = "https://opal-demo.obiba.org"
+)
+
+dsROCrate::check_permissions(con)
+```
+
+
+# Troubleshooting
+
+## Insufficient permissions
+
+Ensure the connected user has the permissions required for the
+target backend.
+
+See the backend-specific sections in this vignette for details.
+
+## Testing Opal permissions directly
+
+```{r eval = FALSE}
+dsROCrate::is_opal_admin_con(con)
+dsROCrate::is_opal_audit_con(con)
+```

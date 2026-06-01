@@ -6,6 +6,7 @@
 #' @returns Boolean value to indicate if the given string is a valid POSIXct
 #' string.
 #' @keywords internal
+#' @noRd
 is_valid_posixct <- function(x, tz = "UTC") {
   tryCatch(
     {

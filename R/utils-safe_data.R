@@ -2,20 +2,21 @@
 #'
 #' @inheritParams safe_data
 #' @param ... Other optional arguments. See the full documentation
+#' @param rocrate (Optional) RO-Crate object to update with Safe Data details.
+#' @param id (Optional) Vector with `@id` strings for Safe Data entity(ies)
+#'     to be extracted from the given RO-Crate, `x`.
 #'
 #' @returns RO-Crate with Safe Data entity(ies).
-#' @rdname extract_safe_data
 #' @keywords internal
+#' @noRd
 extract_safe_data <- function(x, ...) {
   UseMethod("extract_safe_data")
 }
 
-#' @param rocrate (Optional) RO-Crate object to update with Safe Data details.
-#' @rdname extract_safe_data
 #' @export
 extract_safe_data.opal <- function(x, ..., rocrate = rocrateR::rocrate_5s()) {
-  # extract all data sources
-  ds <- opalr::opal.datasources(x)
+  # extract list with all projects
+  ds <- opalr::opal.projects(x)
 
   # extract project names and ignore NAs
   projects <- ds$name[!is.na(ds$name) & !is.null(ds$name)]
@@ -30,9 +31,6 @@ extract_safe_data.opal <- function(x, ..., rocrate = rocrateR::rocrate_5s()) {
   )
 }
 
-#' @param id (Optional) Vector with `@id` strings for Safe Data entity(ies)
-#'     to be extracted from the given RO-Crate, `x`.
-#' @rdname extract_safe_data
 #' @export
 extract_safe_data.rocrate <- function(
   x,
@@ -76,24 +74,22 @@ extract_safe_data.rocrate <- function(
 #' Flatten object with Safe Data details
 #'
 #' @param x Object (e.g., RO-Crate) with Safe Data details. This can be
-#'     generated with the [extract_safe_data()] function.
+#'     generated with the `extract_safe_data()` function.
 #' @param id Vector of strings with the `@id`s for the datasets to be extracted.
 #'     If not provided, extract all entities with `@type = 'Dataset'`.
 #'
 #' @returns Data frame with Safe Data details.
-#' @rdname flatten_safe_data
 #' @keywords internal
+#' @noRd
 flatten_safe_data <- function(x, ...) {
   UseMethod("flatten_safe_data")
 }
 
-#' @rdname flatten_safe_data
 #' @export
 flatten_safe_data.default <- function(x, ...) {
   return(tibble::tibble())
 }
 
-#' @rdname flatten_safe_data
 #' @export
 flatten_safe_data.rocrate <- function(
   x,

@@ -89,8 +89,8 @@ safe_people.opal <- function(
   resources = NULL,
   tables = NULL
 ) {
-  # x is a valid opal connection object
-  validate_opal_con(x)
+  # validate backend
+  validate_backend(x, ...)
 
   # attempt to retrieve project entity
   project_id <- id_hash("#project:", project)

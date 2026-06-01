@@ -10,12 +10,13 @@
 #' @family Armadillo
 #' @usage
 #' \S4method{parse_user_profiles}{armadillo}(x, ..., user)
+#' @noRd
 parse_user_profiles <- function(x, ...) {
   UseMethod("parse_user_profiles")
 }
 
 # S3 methods ----
-#' @rdname parse_user_profiles
+#' @export
 #' @family Opal
 parse_user_profiles.opal <- function(x, ..., user) {
   # local bindings
@@ -45,8 +46,6 @@ parse_user_profiles.opal <- function(x, ..., user) {
 }
 
 # S4 methods ----
-#' @method parse_user_profiles ArmadilloCredentials
-#' @rdname parse_user_profiles
 #' @export
 parse_user_profiles.ArmadilloCredentials <- function(x, ..., user) {
   message("PLACEHOLDER!")
@@ -65,20 +64,13 @@ parse_user_profiles.ArmadilloCredentials <- function(x, ..., user) {
 #' `project` does not exist in the given server.
 #'
 #' @keywords internal
-#' @aliases project_exists,armadillo-method
-#' @family Armadillo
-#' @usage
-#' \S4method{project_exists}{armadillo}(
-#'   x,
-#'   ...,
-#'   project
-#' )
+#' @noRd
 project_exists <- function(x, ...) {
   UseMethod("project_exists")
 }
 
 # S3 methods ----
-#' @rdname project_exists
+#' @export
 #' @family Opal
 project_exists.opal <- function(x, ..., project) {
   if (!opalr::opal.project_exists(x, project)) {
@@ -93,8 +85,6 @@ project_exists.opal <- function(x, ..., project) {
 }
 
 # S4 methods ----
-#' @method project_exists ArmadilloCredentials
-#' @rdname project_exists
 #' @export
 #' @family Armadillo
 project_exists.ArmadilloCredentials <-
@@ -113,3 +103,96 @@ project_exists.ArmadilloCredentials <-
       )
     }
   }
+
+#' Validate backend
+#'
+#' Validate backend: including connection status, backend version and check the
+#' user permissions.
+#'
+#' @param x DataSHIELD backend connection object.
+#' @param ... Optional params.
+#'
+#' @returns Nothing, call for its side effect.
+#' @keywords internal
+#' @noRd
+validate_backend <- function(x, ...) {
+  # validate connection object
+  validate_con(x, ...)
+  # validate backend version
+  validate_backend_version(x, ...)
+  # validate that the connection user has administrative or audit privileges
+  check_permissions(x, ...)
+
+  invisible(TRUE)
+}
+
+#' Validate backend version
+#'
+#' @param x DataSHIELD backend connection object.
+#' @param ... Unused.
+#' @param minimum String with minimum version.
+#'
+#' @returns Logical value indicating if backend version is valid.
+#' @keywords internal
+#' @noRd
+validate_backend_version <- function(x, ...) {
+  UseMethod("validate_backend_version")
+}
+
+#' @export
+validate_backend_version.default <- function(x, ...) {
+  invisible(TRUE)
+}
+
+#' @export
+validate_backend_version.opal <- function(x, ..., minimum = "5.7.2") {
+  if (utils::compareVersion(x$version, minimum) < 0) {
+    stop(
+      sprintf(
+        "Opal >= %s is required, but server version is %s.",
+        minimum,
+        x$version
+      ),
+      call. = FALSE
+    )
+  }
+  invisible(TRUE)
+}
+
+#' Validate backend connection
+#'
+#' @param x DataSHIELD backend connection object.
+#' @param ... Unused.
+#'
+#' @returns Nothing, call for its side effect.
+#' @keywords internal
+#' @noRd
+validate_con <- function(x, ...) {
+  UseMethod("validate_con")
+}
+
+#' @export
+validate_con.default <- function(x, ...) {
+  stop(
+    sprintf(
+      "Unsupported connection type: %s",
+      paste(class(x), collapse = ", ")
+    ),
+    call. = FALSE
+  )
+}
+
+#' @export
+validate_con.opal <- function(x, ...) {
+  tryCatch(
+    {
+      status <- xptr::is_null_xptr(x$handle$handle)
+      if (status) {
+        stop("The given connection is not valid!", call. = FALSE)
+      }
+    },
+    error = function(e) {
+      stop("The given connection is not valid!", call. = FALSE)
+    }
+  )
+}

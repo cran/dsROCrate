@@ -2,16 +2,16 @@
 #'
 #' @inheritParams safe_data
 #' @param ... Other optional arguments. See the full documentation
+#' @param rocrate (Optional) RO-Crate object to update with Safe Setting details.
+#' @param id (Optional) Vector with `@id` strings for Safe Setting entity(ies).
 #'
 #' @returns RO-Crate with Safe Setting entity(ies).
-#' @rdname extract_safe_setting
 #' @keywords internal
+#' @noRd
 extract_safe_setting <- function(x, ...) {
   UseMethod("extract_safe_setting")
 }
 
-#' @param rocrate (Optional) RO-Crate object to update with Safe Setting details.
-#' @rdname extract_safe_setting
 #' @export
 extract_safe_setting.opal <- function(
   x,
@@ -25,9 +25,6 @@ extract_safe_setting.opal <- function(
   return(rocrate)
 }
 
-#' @param id (Optional) Vector with `@id` strings for Safe Setting entity(ies)
-#'     to be extracted from the given RO-Crate, `x`.
-#' @rdname extract_safe_setting
 #' @export
 extract_safe_setting.rocrate <- function(
   x,
@@ -107,25 +104,23 @@ extract_safe_setting.rocrate <- function(
 #' Flatten object with Safe Setting details
 #'
 #' @param x Object (e.g., RO-Crate) with Safe Setting details. This can be
-#'     generated with the [extract_safe_setting()] function.
+#'     generated with the `extract_safe_setting()` function.
 #' @param id Vector of strings with the `@id`s for the settings to be extracted.
 #'     If not provided, extract all entities with `@type = 'PropertyValue'` or
 #'     `@type = 'SoftwareApplication'`.
 #'
 #' @returns Data frame with Safe Settings.
-#' @rdname flatten_safe_setting
 #' @keywords internal
+#' @noRd
 flatten_safe_setting <- function(x, ...) {
   UseMethod("flatten_safe_setting")
 }
 
-#' @rdname flatten_safe_setting
 #' @export
 flatten_safe_setting.default <- function(x, ...) {
   return(tibble::tibble())
 }
 
-#' @rdname flatten_safe_setting
 #' @export
 flatten_safe_setting.rocrate <- function(x, ..., id = NULL) {
   tryCatch(

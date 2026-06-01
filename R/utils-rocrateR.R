@@ -10,6 +10,7 @@
 #'
 #' @returns Updated RO-Crate object.
 #' @keywords internal
+#' @noRd
 append_entity_ref <- function(rocrate, id, key, ref_id) {
   entity <- rocrateR::get_entity(rocrate, id = id)[[1]]
 

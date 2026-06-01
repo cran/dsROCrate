@@ -759,6 +759,7 @@ link_people_to_root <- function(rc, usernames) {
 #'
 #' @return Object of class `cr8tor`.
 #' @keywords internal
+#' @noRd
 load_cr8tor_bundle <- function(x, ...) {
   tmp <- tempfile("cr8tor_")
   dir.create(tmp, recursive = TRUE, showWarnings = FALSE)

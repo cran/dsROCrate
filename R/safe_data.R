@@ -100,8 +100,8 @@ safe_data.opal <- function(
   # declare local bindings
   created <- lastUpdate <- name <- new_dataset_entity <- subject <- NULL
 
-  # x is a valid opal connection object
-  validate_opal_con(x)
+  # validate backend
+  validate_backend(x, ...)
 
   # match the assets to be included
   include <- match.arg(include, several.ok = TRUE)

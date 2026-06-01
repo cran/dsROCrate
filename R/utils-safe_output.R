@@ -1,18 +1,19 @@
 #' Extract Safe Output entity(ies)
 #'
 #' @inheritParams safe_data
+#' @inheritParams safe_output
 #' @param ... Other optional arguments. See the full documentation
+#' @param rocrate (Optional) RO-Crate object to update with Safe Output details.
+#' @param id (Optional) Vector with `@id` strings for Safe Output entity(ies)
+#'     to be extracted from the given RO-Crate, `x`.
 #'
 #' @returns RO-Crate with Safe Output entity(ies).
-#' @rdname extract_safe_output
 #' @keywords internal
+#' @noRd
 extract_safe_output <- function(x, ...) {
   UseMethod("extract_safe_output")
 }
 
-#' @param rocrate (Optional) RO-Crate object to update with Safe Output details.
-#' @inheritParams safe_output
-#' @rdname extract_safe_output
 #' @export
 extract_safe_output.opal <- function(
   x,
@@ -37,10 +38,6 @@ extract_safe_output.opal <- function(
   return(rocrate)
 }
 
-#' @param id (Optional) Vector with `@id` strings for Safe Output entity(ies)
-#'     to be extracted from the given RO-Crate, `x`.
-#' @inheritParams safe_output
-#' @rdname extract_safe_output
 #' @export
 extract_safe_output.rocrate <- function(
   x,
@@ -94,24 +91,22 @@ extract_safe_output.rocrate <- function(
 #' Flatten object with Safe Output details
 #'
 #' @param x Object (e.g., RO-Crate) with Safe Output details. This can be
-#'     generated with the [extract_safe_output()] function.
+#'     generated with the `extract_safe_output()` function.
 #' @param id Vector of strings with the `@id`s for the outputs to be extracted.
 #'     If not provided, extract all entities with `@type = 'File'`.
 #'
 #' @returns Data frame with object mappings and functions from safe outputs.
-#' @rdname flatten_safe_output
 #' @keywords internal
+#' @noRd
 flatten_safe_output <- function(x, ...) {
   UseMethod("flatten_safe_output")
 }
 
-#' @rdname flatten_safe_output
 #' @export
 flatten_safe_output.default <- function(x, ...) {
   return(tibble::tibble())
 }
 
-#' @rdname flatten_safe_output
 #' @export
 flatten_safe_output.rocrate <- function(x, ..., id = NULL) {
   tryCatch(

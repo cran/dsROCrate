@@ -76,7 +76,6 @@ library(dsROCrate)
 
 # show all the lines in the RO-Crate
 oopt <- options(max_lines = Inf)
-on.exit(options(oopt), add = TRUE)
 ```
 
 This tutorial assumes that you have an internet connection and can access 
@@ -92,6 +91,15 @@ vignette("deploy-local-datashield-server-with-opal", package = "dsROCrate")
 ---------------------
 
 ## 1. Creating your first RO-Crate
+
+> **&#9432;** Here we are using an administrator account, as this one is 
+available by default on the demo server; however, we recommend you create a
+dedicated auditing account with the `Audit system` permission level. See the 
+vignette:
+>
+> `vignette('audit-permissions', package = 'dsROCrate')` 
+>
+> for further details.
 
 ### 1.1. Connect to an Opal server
 
@@ -200,9 +208,9 @@ print(basic_rocrate) # note that the output will be truncated
 #### Safe Setting
 To add details for Safe Setting, use the function `dsROCrate::safe_setting()`.
 
-**⚠️NOTE:** The `dsROCrate::safe_setting` function requires administrator
-privileges, so here, we will have to log in with administrator credentials (if
-you used a non-administrator account previously).
+**&#9432;️ NOTE:** The `dsROCrate::safe_setting` function requires administrator
+or auditor privileges, so here, we will have to log in with administrator
+credentials (if you used a non-administrator/auditor account previously).
 
 ```{r, eval = FALSE}
 # close previous connection
@@ -230,9 +238,9 @@ Currently, only log files from the operations executed by the user within a
 specific period. Set the period using `logs_from` and `logs_to`. Additionally,
 a list of functions executed by the user are extracted in a separate file/entity.
 
-**⚠️NOTE:** Similar to `dsROCrate::safe_setting`, the `dsROCrate::safe_output` 
-function requires of administrator rights, so here, we will have to log in with 
-administrator credentials:
+**&#9432; NOTE:** Similar to `dsROCrate::safe_setting`, the `dsROCrate::safe_output` 
+function requires of administrator or auditor privileges, so here, we will have to log in with 
+administrator/auditor credentials:
 
 ```{r, eval = FALSE}
 # close previous connection
@@ -250,8 +258,8 @@ o <- opalr::opal.login(
 
 ##### DataSHIELD operations
 
-**⚠️NOTE:** Before extracting logs, ensure there is recent activity on the 
-server for testing purposes. This can be done using the following commands:
+**&#9432; NOTE:** Before extracting logs, ensure there is recent activity on 
+the server for testing purposes. This can be done using the following commands:
 
 ###### Setup
 You will need the following packages:
@@ -279,7 +287,7 @@ conns <- DSI::datashield.login(logins = logindata)
 ```
 
 ###### Simulate some operations
-```{r, eval = TRUE}
+```{r, eval = FALSE}
 ## assign data
 DSI::datashield.assign.table(conns["study1"], 
                              symbol = "dsROCrate_test",
@@ -287,11 +295,51 @@ DSI::datashield.assign.table(conns["study1"],
                              errors.print = TRUE)
 
 dsBaseClient::ds.ls(datasources = conns["study1"])
+#> $study1
+#> $study1$environment.searched
+#> [1] "R_GlobalEnv"
+#> 
+#> $study1$objects.found
+#> [1] "dsROCrate_test"
 dsBaseClient::ds.summary("dsROCrate_test")
+#> $study1
+#> $study1$class
+#> [1] "data.frame"
+#> 
+#> $study1$`number of rows`
+#> [1] 2163
+#> 
+#> $study1$`number of columns`
+#> [1] 11
+#> 
+#> $study1$`variables held`
+#>  [1] "LAB_TSC"            "LAB_TRIG"           "LAB_HDL"           
+#>  [4] "LAB_GLUC_ADJUSTED"  "PM_BMI_CONTINUOUS"  "DIS_CVA"           
+#>  [7] "MEDI_LPD"           "DIS_DIAB"           "DIS_AMI"           
+#> [10] "GENDER"             "PM_BMI_CATEGORICAL"
 ```
 
-```{r, echo = FALSE, warning = FALSE, message = FALSE}
+```{r, echo = FALSE, warning = FALSE, message = FALSE, results='hide'}
 # check if there are any logs available, if not simulate some operations
+dsuser_logs_tbl <- opalr::opal.login(
+    username = "administrator",
+    password = "password",
+    url = SERVER
+) |> 
+  opalr::dsadmin.log() |>
+  dplyr::bind_rows(tibble::tibble(username = NA, ds_action = NA)) |>
+  dplyr::filter(!is.na(username), username == "dsuser") |>
+  dplyr::filter(ds_action %in% c("ASSIGN", "AGGREGATE", "OPEN"))
+
+if (nrow(dsuser_logs_tbl) < 1) {
+  ## assign data
+  DSI::datashield.assign.table(conns["study1"], 
+                               symbol = "dsROCrate_test",
+                               table = paste0(PROJECT, ".", TABLES[1]),
+                               errors.print = TRUE)
+  dsBaseClient::ds.ls(datasources = conns["study1"])
+  dsBaseClient::ds.summary("dsROCrate_test")
+}
 ```
 
 ---------
@@ -305,11 +353,11 @@ lines_before_safe_outputs <- rocrate_lines(basic_rocrate)
 ```{r safe_outputs}
 basic_rocrate <- o |>
   dsROCrate::safe_output(rocrate = basic_rocrate,
-                         logs_from = Sys.time() - 60, # capture the last minute
+                         logs_from = Sys.time() - 8.64E4, # capture the last 24 hours
                          logs_to = Sys.time())
 ```
 
-```{r, out.lines=-(lines_before_safe_outputs + 1)}
+```{r, out.lines=-(lines_before_safe_outputs + 6)}
 print(basic_rocrate) # note that the output will be truncated
 ```
 
@@ -325,7 +373,7 @@ The resulting RO-Crate can be stored into an RO-Crate bag/archive with the
 function `rocrateR::bag_rocrate`:
 
 ```{r}
-# create temp directory
+# create temp directory (only for demo purposes)
 tmp_path_bag <- file.path(tempdir(), "dsROCrate-getting-started")
 dir.create(tmp_path_bag, showWarnings = FALSE)
 
@@ -351,8 +399,12 @@ path_to_rocrate_bag |>
 unlink(tmp_path_bag, recursive = TRUE, force = TRUE)
 ```
 
-
 <br />
+
+```{r, echo = FALSE}
+options(oopt)
+oopt <- options(max_lines = 40)
+```
 
 ## 2. Auditing RO-Crates and servers
 
@@ -457,7 +509,7 @@ study_crate_v1 <-
     "opal_test" = opalr::opal.login(
       username = USERNAME,
       password = USERPASS,
-      url = "https://opal-test.obiba.org"
+      url = "https://opal-demo.obiba.org"
     ),
     "opal_demo" = opalr::opal.login(
       username = USERNAME,

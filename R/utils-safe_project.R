@@ -2,25 +2,26 @@
 #'
 #' @inheritParams safe_data
 #' @param ... Other optional arguments. See the full documentation
+#' @param rocrate (Optional) RO-Crate object to update with Safe Project
+#'     details.
+#' @param id (Optional) Vector with `@id` strings for Safe Project entity(ies)
+#'     to be extracted from the given RO-Crate, `x`.
 #'
 #' @returns List with Safe Project entity(ies).
-#' @rdname extract_safe_project
 #' @keywords internal
+#' @noRd
 extract_safe_project <- function(x, ...) {
   UseMethod("extract_safe_project")
 }
 
-#' @param rocrate (Optional) RO-Crate object to update with Safe Project
-#'     details.
-#' @rdname extract_safe_project
 #' @export
 extract_safe_project.opal <- function(
   x,
   ...,
   rocrate = rocrateR::rocrate_5s()
 ) {
-  # extract all data sources
-  ds <- opalr::opal.datasources(x)
+  # extract list with all projects
+  ds <- opalr::opal.projects(x)
 
   # cycle through the data source (x) and extract project details
   for (i in seq_len(nrow(ds))) {
@@ -37,9 +38,6 @@ extract_safe_project.opal <- function(
   return(rocrate)
 }
 
-#' @param id (Optional) Vector with `@id` strings for Safe Project entity(ies)
-#'     to be extracted from the given RO-Crate, `x`.
-#' @rdname extract_safe_project
 #' @export
 extract_safe_project.rocrate <- function(
   x,
@@ -102,26 +100,24 @@ extract_safe_project.rocrate <- function(
 #' Flatten object with Safe Project details
 #'
 #' @param x Object (e.g., RO-Crate) with Safe Project details. This
-#'     can be generated with the [extract_safe_project()] function.
+#'     can be generated with the `extract_safe_project()` function.
 #' @param ... Other optional arguments (not in used).
 #' @param y Object (e.g., RO-Crate) with Safe Data details. This can be
-#'     generated with the [extract_safe_data()] function. If not provided, it
+#'     generated with the `extract_safe_data()` function. If not provided, it
 #'     uses the `x` by default.
 #'
 #' @returns Data frame with safe project details.
 #' @keywords internal
-#' @rdname flatten_safe_project
+#' @noRd
 flatten_safe_project <- function(x, ...) {
   UseMethod("flatten_safe_project")
 }
 
-#' @rdname flatten_safe_project
 #' @export
 flatten_safe_project.default <- function(x, ...) {
   return(tibble::tibble())
 }
 
-#' @rdname flatten_safe_project
 #' @export
 flatten_safe_project.rocrate <- function(x, ..., y = x) {
   tryCatch(

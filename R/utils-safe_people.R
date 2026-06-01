@@ -2,16 +2,17 @@
 #'
 #' @inheritParams safe_data
 #' @param ... Other optional arguments. See the full documentation
+#' @param rocrate (Optional) RO-Crate object to update with Safe People details.
+#' @param id (Optional) Vector with `@id` strings for Safe People entity(ies)
+#'     to be extracted from the given RO-Crate, `x`.
 #'
 #' @returns RO-Crate with Safe People entity(ies).
-#' @rdname extract_safe_people
 #' @keywords internal
+#' @noRd
 extract_safe_people <- function(x, ...) {
   UseMethod("extract_safe_people")
 }
 
-#' @param rocrate (Optional) RO-Crate object to update with Safe People details.
-#' @rdname extract_safe_people
 #' @export
 extract_safe_people.opal <- function(x, ..., rocrate = rocrateR::rocrate_5s()) {
   # set local binding
@@ -39,9 +40,6 @@ extract_safe_people.opal <- function(x, ..., rocrate = rocrateR::rocrate_5s()) {
   return(rocrate)
 }
 
-#' @param id (Optional) Vector with `@id` strings for Safe People entity(ies)
-#'     to be extracted from the given RO-Crate, `x`.
-#' @rdname extract_safe_people
 #' @export
 extract_safe_people.rocrate <- function(
   x,
@@ -104,25 +102,23 @@ extract_safe_people.rocrate <- function(
 #' Flatten object with Safe People details
 #'
 #' @param x Object (e.g., RO-Crate) with Safe People details. This can be
-#'     generated with the [extract_safe_data()] function.
+#'     generated with the `extract_safe_people()` function.
 #' @param ... Other optional arguments (not in used).
 #' @param id Vector of strings with the `@id`s for the users to be extracted.
 #'     If not provided, extract all entities with `@type = 'Person'`.
 #'
 #' @returns Data frame with safe people details.
-#' @rdname flatten_safe_people
 #' @keywords internal
+#' @noRd
 flatten_safe_people <- function(x, ...) {
   UseMethod("flatten_safe_people")
 }
 
-#' @rdname flatten_safe_people
 #' @export
 flatten_safe_people.default <- function(x, ...) {
   return(tibble::tibble())
 }
 
-#' @rdname flatten_safe_people
 #' @export
 flatten_safe_people.rocrate <- function(x, ..., id = NULL) {
   # local bindings

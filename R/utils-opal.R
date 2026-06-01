@@ -18,6 +18,9 @@ add_asset_permissions_to_crate <- function(
   assets_tbl,
   id_lookup
 ) {
+  # retrieve users (if any), safe_people.* should be executed first
+  safe_people_tbl <- flatten_safe_people(rocrate)
+
   for (i in seq_len(nrow(assets_tbl))) {
     asset <- assets_tbl[i, ]
 
@@ -29,6 +32,12 @@ add_asset_permissions_to_crate <- function(
 
     if (is.null(perms)) {
       next
+    }
+
+    # exclude admin and auditors permissions
+    if (nrow(safe_people_tbl)) {
+      perms <- perms |>
+        dplyr::filter(person %in% safe_people_tbl$name)
     }
 
     # iterate through person permissions for an asset
@@ -110,11 +119,7 @@ build_asset_entities <- function(assets_tbl, project_id, asset_id_suffix) {
         url = url,
         dateCreated = safe_time(created),
         dateModified = safe_time(updated),
-        isPartOf = list(`@id` = project_id) #,
-        # extra = list(
-        #   assetKind = asset_type,
-        #   backend = meta
-        # )
+        isPartOf = list(`@id` = project_id)
       )
     }
   )
@@ -173,19 +178,11 @@ get_project_assets <- function(x, project, type = c("tables", "resources")) {
       name = vapply(prj, \(x) x$name %||% "", ""),
       description = vapply(prj, \(x) x$description %||% "", ""),
       created = vapply(prj, \(x) safe_time(x$timestamps$created), character(1)),
-      #   prj,
-      #   \(x) as.POSIXct(x$timestamps$created, tz = "UTC") %||% NA_real_,
-      #   character(1)
-      # ),
       updated = vapply(
         prj,
         \(x) safe_time(x$timestamps$lastUpdate),
         character(1)
       ),
-      #   prj,
-      #   \(x) as.POSIXct(x$timestamps$lastUpdate, tz = "UTC") %||% NA_real_,
-      #   character(1)
-      # ),
       url = vapply(prj, \(x) x$link %||% NA_character_, ""),
       meta = vector("list", length(prj))
     )
@@ -202,15 +199,7 @@ get_project_assets <- function(x, project, type = c("tables", "resources")) {
       name = vapply(res, \(x) x$name %||% "", ""),
       description = vapply(res, \(x) x$description %||% "", ""),
       created = vapply(res, \(x) safe_time(x$created), character(1)),
-      #   res,
-      #   \(x) as.POSIXct(x$created, tz = "UTC") %||% NA_real_,
-      #   character(1)
-      # ),
       updated = vapply(res, \(x) safe_time(x$updated), character(1)),
-      #   res,
-      #   \(x) as.POSIXct(x$updated, tz = "UTC") %||% NA_real_,
-      #   character(1)
-      # ),
       url = vapply(res, function(x) x$resource$url %||% NA_character_, ""),
       meta = parse_resource_params(
         vapply(res, `[[`, "", "parameters")
@@ -219,137 +208,13 @@ get_project_assets <- function(x, project, type = c("tables", "resources")) {
   }
 }
 
-#' Get project details (including tables)
-#'
-#' @inheritParams get_table_permissions
-#'
-#' @returns Data frame with project and tables associated
-#' @keywords internal
-#'
-#' @family Opal
-get_project_details <- function(x, project) {
-  project |>
-    lapply(function(p) {
-      tryCatch(
-        {
-          # check if the given project exists
-          project_exists(x, project = p)
-
-          # retrieve tables for the given project
-          project_tables <- get_project_tables(x, p)
-          # check if any tables were found attached to the project
-          if (length(project_tables) < 1) {
-            return(tibble::tibble(project = p, table = NA))
-          }
-          tibble::tibble(
-            project = p,
-            table = project_tables
-          )
-        },
-        error = function(e) {
-          return(tibble::tibble(project = p, table = NA))
-        }
-      )
-    }) |>
-    dplyr::bind_rows() |>
-    dplyr::filter(!is.na(table))
-}
-
-#' Get project tables
-#'
-#' Wrapper for [opalr::opal.project()].
-#'
-#' @inheritParams get_table_permissions
-#'
-#' @returns List of project tables
-#' @keywords internal
-#'
-#' @family Opal
-get_project_tables <- function(x, project) {
-  # verify if project exists
-  project_exists(x, project = project)
-
-  # extract table names associated to `project`
-  project_tables <- opalr::opal.project(x, project) |>
-    getElement("datasource") |>
-    getElement("table") |>
-    unlist()
-
-  # verify if `project_tables` is missing or NULL, if so, print warning message
-  if (all(is.na(project_tables)) || all(is.null(project_tables))) {
-    warning(
-      "The given `project`, does not have any tables associated!",
-      call. = FALSE
-    )
-
-    # return empty list, invisibly
-    return(invisible(list()))
-  }
-
-  # return project tables
-  return(project_tables)
-}
-
-#' Get table permissions
-#'
-#' Wrapper for the [opalr::opal.table_perm()] function.
-#'
-#' @inheritParams validate_opal_con
-#' @param project String with project name.
-#' @param tables String (or vector of strings) with table names for the given
-#'     project.
-#'
-#' @returns Data frame with permissions for each table in `tables`.
-#' @keywords internal
-#'
-#' @family Opal
-get_table_permissions <- function(x, project, tables) {
-  seq_along(tables) |>
-    lapply(function(j) {
-      tryCatch(
-        {
-          tibble::tibble(
-            project = project,
-            table = tables[j],
-            # get permissions for each dataset inside each project
-            opalr::opal.table_perm(x, project, tables[j])
-          )
-        },
-        error = function(e) {
-          if (grepl("HTTP 403", e$message)) {
-            stop(
-              "The provided connection does not have access to retrieve ",
-              "table permissions!",
-              call. = FALSE
-            )
-          } else if (grepl("HTTP 404", e$message)) {
-            warning(
-              "Error when retrieving permissions for ",
-              paste0(project, ".", tables[j], "!"),
-              call. = FALSE
-            )
-          } else {
-            warning(e$message, call. = FALSE)
-          }
-
-          # return empty tibble, only with `project` and `table` details
-          return(tibble::tibble(
-            project = project,
-            table = tables[j]
-          ))
-        }
-      )
-    }) |>
-    # combine results from the permissions for each table
-    dplyr::bind_rows()
-}
-
 #' Flatten user permission entities
 #'
-#' @param x List with entities, generated by [user_perm_entity()].
+#' @param x List with entities, generated by `user_perm_entity()`.
 #'
 #' @returns Tibble with properties of the entities.
 #' @keywords internal
+#' @noRd
 flatten_user_perm_entity <- function(x) {
   # local bindings
   agent <- object <- asset_id <- person_id <- NULL
@@ -419,24 +284,84 @@ infer_table_resource_lineage <- function(assets_tbl) {
 
 #' Verify if connection was created by an administrative user
 #'
-#' @inheritParams validate_opal_con
+#' @inheritParams validate_con
 #'
 #' @returns Boolean flag to indicate whether the given connection was created
 #'     by an administrative user.
 #' @keywords internal
+#'
+#' @noRd
 is_opal_admin_con <- function(x) {
-  # validate connection
-  validate_opal_con(x)
+  # local binding
+  aux <- NULL
 
-  # extract the user profile, `uprofile` from the connection object
-  uprofile <- getElement(x, "uprofile")
+  # condition 1: admin users have access to `opalr::oadmin.user_exists`
+  cond1 <- tryCatch(
+    {
+      aux <- opalr::oadmin.user_exists(x, x$username)
+      TRUE
+    },
+    error = function(e) {
+      FALSE
+    }
+  )
 
-  # extract logged in user's groups
-  groups <- getElement(uprofile, "groups") |>
-    sapply(unlist)
+  # condition 2: admin users have access to `opalr::dsadmin.profile_exists`
+  cond2 <- tryCatch(
+    {
+      aux <- opalr::dsadmin.profile_exists(x, "default")
+      TRUE
+    },
+    error = function(e) {
+      FALSE
+    }
+  )
 
-  # check if the user has admin in their groups
-  if ("admin" %in% groups) {
+  # check all the conditions are met
+  if (all(cond1, cond2)) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
+
+#' Verify if connection was created by an auditor user
+#'
+#' @inheritParams validate_con
+#'
+#' @returns Boolean flag to indicate whether the given connection was created
+#'     by an administrative user.
+#' @keywords internal
+#'
+#' @noRd
+is_opal_audit_con <- function(x) {
+  # local binding
+  aux <- NULL
+
+  # condition 1: auditor users don't have access to `opalr::oadmin.user_exists`
+  cond1 <- tryCatch(
+    {
+      aux <- opalr::oadmin.user_exists(x, x$username)
+      FALSE
+    },
+    error = function(e) {
+      TRUE
+    }
+  )
+
+  # condition 2: auditor users have access to `opalr::dsadmin.profile_exists`
+  cond2 <- tryCatch(
+    {
+      aux <- opalr::dsadmin.profile_exists(x, "default")
+      TRUE
+    },
+    error = function(e) {
+      FALSE
+    }
+  )
+
+  # check all the conditions are met
+  if (all(cond1, cond2)) {
     return(TRUE)
   } else {
     return(FALSE)
@@ -488,14 +413,6 @@ map_asset_type <- function(asset_type, meta, url) {
   "DigitalDocument"
 }
 
-normalise_permission <- function(p) {
-  allowed <- c("view", "view-values", "edit", "edit-values", "administrate")
-  if (p %in% allowed) {
-    return(p)
-  }
-  "view"
-}
-
 #' Parse project resources parametres
 #'
 #' @param params_json JSON object with resource params.
@@ -524,49 +441,6 @@ safe_time <- function(x) {
     format(as.POSIXct(x), "%Y-%m-%dT%H:%M:%SZ"),
     error = function(e) character(1)
   )
-}
-
-#' Update datasets linked to a project
-#'
-#' Update datasets linked to a project (`hasPart`)
-#'
-#' @inheritParams safe_data
-#' @param ds_ids Vector with `@id`s of the datasets to be linked to `project`
-#'
-#' @returns Update RO-Crate with updated project entity
-#' @keywords internal
-update_project_datasets <- function(rocrate, project, ds_ids) {
-  # attempt to retrieve the project entities to link up the IDs to the project
-  # this only valid if safe_project is called before safe_data
-  suppressWarnings({
-    project_ents <- rocrate |>
-      .get_entity(type = "Project") |>
-      # only keep entity for `project`
-      Filter(f = \(x) getElement(x, "name") == project)
-  })
-
-  # if any entity was found, then filter to keep those for which their @id
-  # starts with `project_id_suffix` as set by `safe_project()`:
-  if (length(project_ents) == 1 && !is.null(project)) {
-    # extract the `hasPart` section
-    has_part <- project_ents |>
-      sapply("[[", "hasPart") |>
-      unlist()
-
-    # update the `hasPart` section
-    rocrate <- rocrate |>
-      rocrateR::add_entity_value(
-        id = project_ents[[1]]["@id"],
-        key = "hasPart",
-        value = c(has_part, ds_ids) |>
-          unique() |>
-          lapply(\(id) list(`@id` = id)),
-        overwrite = TRUE
-      )
-  }
-
-  # return update RO-Crate
-  return(rocrate)
 }
 
 #' @noRd
@@ -602,6 +476,7 @@ user_asset_perm_entities <- function(
 #'
 #' @returns List of [rocrateR::entity] objects
 #' @keywords internal
+#' @noRd
 user_perm_entity <- function(
   person,
   person_id,
@@ -667,24 +542,4 @@ user_perm_entity <- function(
   #   })
   purrr::pmap(permission_entities_tbl, rocrateR::entity)
   # rocrateR::entity(as.list(permission_entities_tbl))
-}
-
-#' Validate OBiBa's Opal connection
-#'
-#' @param x Connection to OBiBa's Opal server (see [opalr::opal.login()]).
-#'
-#' @returns Nothing, call for its side effect.
-#' @keywords internal
-validate_opal_con <- function(x) {
-  tryCatch(
-    {
-      status <- xptr::is_null_xptr(x$handle$handle)
-      if (status) {
-        stop("The given connection is not valid!", call. = FALSE)
-      }
-    },
-    error = function(e) {
-      stop("The given connection is not valid!", call. = FALSE)
-    }
-  )
 }

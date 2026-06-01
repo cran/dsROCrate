@@ -24,6 +24,5 @@ bibentry(
   ),
   year = "2026",
   note = "Zenodo report associated with the dsROCrate R package",
-  doi  = "10.5281/zenodo.19366020",
-  url  = "https://zenodo.org/doi/10.5281/zenodo.19366020"
+  doi  = "10.5281/zenodo.19366020"
 )
