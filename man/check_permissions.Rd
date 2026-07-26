@@ -2,14 +2,23 @@
 % Please edit documentation in R/check_permissions.R
 \name{check_permissions}
 \alias{check_permissions}
+\alias{check_permissions.ArmadilloCredentials}
+\alias{check_permissions.opal}
 \title{Check backend connection permissions}
 \usage{
 check_permissions(x, ...)
+
+\method{check_permissions}{ArmadilloCredentials}(x, ...)
+
+\method{check_permissions}{opal}(x, ..., verbose = FALSE)
 }
 \arguments{
 \item{x}{A backend connection object.}
 
 \item{...}{Additional arguments passed to methods.}
+
+\item{verbose}{Boolean value used to indicate if a success message should be
+displayed (default: FALSE)}
 }
 \value{
 Returns \code{TRUE} invisibly if the connection has sufficient permissions.

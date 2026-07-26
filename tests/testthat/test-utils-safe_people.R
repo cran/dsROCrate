@@ -39,20 +39,58 @@ test_that("extract_safe_people.opal updates an existing RO-Crate", {
 })
 
 test_that("extract_safe_people.opal excludes admin and administrator accounts", {
-  # open connection to OBiBa's Opal demo server
-  opal_con <- opal_demo_con()
-  # terminate connection when done with tests
-  withr::defer(opalr::opal.logout(opal_con))
+  # the real OBiBa demo server doesn't set the `administrate` permission on
+  # its `administrator` account, so this can't be exercised against it -
+  # simulate a server where the exclusion actually has something to catch
+  local_mocked_bindings(
+    backend_users = function(x, ..., df = FALSE) {
+      list(
+        list(principal = "alice", groups = list("auditor")),
+        list(principal = "bob_admin", groups = list("admin"))
+      )
+    },
+    backend_sys_perms = function(x, ...) {
+      tibble::tibble(
+        subject = c("alice", "bob_admin"),
+        permission = c("view", "administrate"),
+        type = c("user", "user")
+      )
+    }
+  )
 
-  roc <- extract_safe_people(opal_con)
+  # records which users actually got passed into `safe_people()`, without
+  # needing `<<-` - environments are mutable by reference
+  calls <- new.env()
+  calls$safe_people <- character()
 
-  people <- rocrateR::get_entity(roc, type = "Person")
-  ids <- vapply(people, function(e) getElement(e, "name")[[1]], character(1))
+  local_mocked_bindings(
+    `safe_people.rocrate` = function(
+      x,
+      ...,
+      connection,
+      user,
+      set_author = TRUE,
+      set_project = TRUE
+    ) {
+      calls$safe_people <- c(
+        calls$safe_people,
+        as.character(unlist(user, use.names = FALSE))
+      )
+      x
+    }
+  )
 
-  expect_false(any(tolower(ids) %in% c("admin", "administrator")))
+  con <- fake_opal_con()
+  roc <- extract_safe_people(con)
 
-  # close connection to OBiBa's Opal demo server
-  opalr::opal.logout(opal_con)
+  print(calls$safe_people)
+
+  # `administrator` never reaches `safe_people()` because it's excluded
+  # upstream, in `filter_safe_people()`, before the Person entity would
+  # ever be created
+  expect_false(any(tolower(calls$safe_people) %in% c("admin", "administrator")))
+  expect_equal(calls$safe_people, "alice")
+  expect_s3_class(roc, "rocrate")
 })
 
 test_that("extract_safe_people.opal iterates over all returned subject profiles", {
@@ -61,7 +99,7 @@ test_that("extract_safe_people.opal iterates over all returned subject profiles"
   # terminate connection when done with tests
   withr::defer(opalr::opal.logout(opal_con))
 
-  users_raw <- opalr::oadmin.user_profiles(opal_con, df = FALSE)
+  users_raw <- backend_users(opal_con, df = FALSE)
   users_tbl <- dplyr::bind_rows(users_raw)
 
   expect_true(nrow(users_tbl) >= 1)

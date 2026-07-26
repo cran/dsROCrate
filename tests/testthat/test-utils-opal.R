@@ -8,11 +8,11 @@ test_that("validate_con works with real Opal connection", {
   opalr::opal.logout(opal_con)
 })
 
-test_that("is_opal_admin_con detects admin connection correctly", {
+test_that("is_admin_con detects admin connection correctly", {
   # open connection to OBiBa's Opal demo server
   opal_con <- opal_demo_con()
 
-  res <- is_opal_admin_con(opal_con)
+  res <- is_admin_con(opal_con)
 
   expect_type(res, "logical")
   expect_true(res)

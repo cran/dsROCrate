@@ -2,6 +2,7 @@
 % Please edit documentation in R/safe_output.R
 \name{safe_output}
 \alias{safe_output}
+\alias{safe_output.ArmadilloCredentials}
 \alias{safe_output.character}
 \alias{safe_output.opal}
 \alias{safe_output.rocrate}
@@ -14,6 +15,8 @@
 }
 \usage{
 safe_output(x, ...)
+
+\method{safe_output}{ArmadilloCredentials}(x, ...)
 
 \method{safe_output}{character}(
   x,
@@ -59,7 +62,7 @@ safe_output(x, ...)
 }
 \arguments{
 \item{x}{This can be a connection to a 'DataSHIELD' server (e.g., object with
-the \code{opal} class, see \code{\link[opalr:opal.login]{opalr::opal.login()}}), an RO-Crate
+the \code{opal} or \code{ArmadilloCredentials} classes), an RO-Crate
 (\link[rocrateR:rocrate]{rocrate} class) or a string with the path to an
 RO-Crate.}
 

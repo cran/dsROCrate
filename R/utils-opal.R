@@ -127,7 +127,7 @@ build_asset_entities <- function(assets_tbl, project_id, asset_id_suffix) {
 
 #' Get project's asset permissions
 #'
-#' @param x Connection to OBiBa's Opal server (see [opalr::opal.login()]).
+#' @param x Connection to DataSHIELD server (e.g., OBiBa's Opal server).
 #' @param project String with project name.
 #' @param asset_type String with type of asset, either `tables` or `resources`.
 #' @param name String with asset name.
@@ -136,9 +136,9 @@ build_asset_entities <- function(assets_tbl, project_id, asset_id_suffix) {
 #' @noRd
 get_asset_permissions <- function(x, project, asset_type, name) {
   if (asset_type == "table") {
-    perms <- opalr::opal.table_perm(x, project, name)
+    perms <- backend_table_perms(x, project, name)
   } else {
-    perms <- opalr::opal.resource_perm(x, project, name)
+    perms <- backend_resource_perms(x, project, name)
   }
 
   if (is.null(perms) || length(perms$subject) == 0) {
@@ -153,7 +153,7 @@ get_asset_permissions <- function(x, project, asset_type, name) {
 
 #' Get project assets.
 #'
-#' @param x Connection to OBiBa's Opal server (see [opalr::opal.login()]).
+#' @param x Connection to DataSHIELD server (e.g., OBiBa's Opal server).
 #' @param project String with project name.
 #' @param type Type of assets to extract, either `tables` or `resources`.
 #'
@@ -166,7 +166,7 @@ get_project_assets <- function(x, project, type = c("tables", "resources")) {
   project_exists(x, project = project)
 
   if (type == "tables") {
-    prj <- opalr::opal.tables(x, project, df = FALSE)
+    prj <- backend_tables(x, project, df = FALSE)
 
     if (length(prj) == 0) {
       return(NULL)
@@ -187,7 +187,7 @@ get_project_assets <- function(x, project, type = c("tables", "resources")) {
       meta = vector("list", length(prj))
     )
   } else if (type == "resources") {
-    res <- opalr::opal.resources(x, project, df = FALSE)
+    res <- backend_resources(x, project, df = FALSE)
 
     if (length(res) == 0) {
       return(NULL)
@@ -280,92 +280,6 @@ infer_table_resource_lineage <- function(assets_tbl) {
     )
   }) |>
     purrr::list_c()
-}
-
-#' Verify if connection was created by an administrative user
-#'
-#' @inheritParams validate_con
-#'
-#' @returns Boolean flag to indicate whether the given connection was created
-#'     by an administrative user.
-#' @keywords internal
-#'
-#' @noRd
-is_opal_admin_con <- function(x) {
-  # local binding
-  aux <- NULL
-
-  # condition 1: admin users have access to `opalr::oadmin.user_exists`
-  cond1 <- tryCatch(
-    {
-      aux <- opalr::oadmin.user_exists(x, x$username)
-      TRUE
-    },
-    error = function(e) {
-      FALSE
-    }
-  )
-
-  # condition 2: admin users have access to `opalr::dsadmin.profile_exists`
-  cond2 <- tryCatch(
-    {
-      aux <- opalr::dsadmin.profile_exists(x, "default")
-      TRUE
-    },
-    error = function(e) {
-      FALSE
-    }
-  )
-
-  # check all the conditions are met
-  if (all(cond1, cond2)) {
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
-}
-
-#' Verify if connection was created by an auditor user
-#'
-#' @inheritParams validate_con
-#'
-#' @returns Boolean flag to indicate whether the given connection was created
-#'     by an administrative user.
-#' @keywords internal
-#'
-#' @noRd
-is_opal_audit_con <- function(x) {
-  # local binding
-  aux <- NULL
-
-  # condition 1: auditor users don't have access to `opalr::oadmin.user_exists`
-  cond1 <- tryCatch(
-    {
-      aux <- opalr::oadmin.user_exists(x, x$username)
-      FALSE
-    },
-    error = function(e) {
-      TRUE
-    }
-  )
-
-  # condition 2: auditor users have access to `opalr::dsadmin.profile_exists`
-  cond2 <- tryCatch(
-    {
-      aux <- opalr::dsadmin.profile_exists(x, "default")
-      TRUE
-    },
-    error = function(e) {
-      FALSE
-    }
-  )
-
-  # check all the conditions are met
-  if (all(cond1, cond2)) {
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
 }
 
 #' @noRd

@@ -2,11 +2,10 @@
 % Please edit documentation in R/safe_project.R
 \name{safe_project}
 \alias{safe_project}
-\alias{safe_project,armadillo-method}
+\alias{safe_project.ArmadilloCredentials}
 \alias{safe_project.character}
 \alias{safe_project.opal}
 \alias{safe_project.rocrate}
-\alias{safe_project.ArmadilloCredentials}
 \title{Safe Project details}
 \source{
 \itemize{
@@ -15,7 +14,9 @@
 }
 }
 \usage{
-\S4method{safe_project}{armadillo}(
+safe_project(x, ...)
+
+\method{safe_project}{ArmadilloCredentials}(
   x,
   ...,
   profile = "default",
@@ -70,24 +71,10 @@
   tables = attr(x, "tables"),
   user = attr(x, "user")
 )
-
-\method{safe_project}{ArmadilloCredentials}(
-  x,
-  ...,
-  profile = "default",
-  project = NULL,
-  rocrate = rocrateR::rocrate_5s(),
-  asset_id_suffix = "#asset:",
-  project_id_suffix = "#project:",
-  path = NULL,
-  resources = NULL,
-  tables = NULL,
-  user = NULL
-)
 }
 \arguments{
 \item{x}{This can be a connection to a 'DataSHIELD' server (e.g., object with
-the \code{opal} class, see \code{\link[opalr:opal.login]{opalr::opal.login()}}), an RO-Crate
+the \code{opal} or \code{ArmadilloCredentials} classes), an RO-Crate
 (\link[rocrateR:rocrate]{rocrate} class) or a string with the path to an
 RO-Crate.}
 
@@ -98,15 +85,15 @@ RO-Crate.}
 
 \item{project}{String with the name of the \link[=safe_project]{Safe Project}.}
 
+\item{rocrate}{RO-Crate object. Optional, if \code{x} is either an RO-Crate
+object or a path to a valid RO-Crate. If so, then \code{connection} is
+required (default: \code{rocrateR::rocrate_5s()}).}
+
 \item{asset_id_suffix}{String with ID suffix for the tables/datasets
 entities in the RO-Crate (default: \code{"#asset:"}).}
 
 \item{project_id_suffix}{String with ID suffix for the project entities
 in the RO-Crate (default: \code{"#project:"}).}
-
-\item{connection}{Connection object for the 'DataSHIELD' server where the
-values will be extracted from (e.g., OBiBa's Opal). Optional, if \code{x} is
-set to a connection object. If so, then \code{rocrate} is required.}
 
 \item{path}{String with path pointing to the root of the RO-Crate. This will
 be used to store log files. If not provided, logs will be stored within
@@ -124,9 +111,9 @@ associated to \code{project} will be included in the RO-Crate.}
 the Safe People, it must include \verb{@id} and \code{name} entries. Alternatively,
 this can be a string with the \code{name} of the current user.}
 
-\item{rocrate}{RO-Crate object. Optional, if \code{x} is either an RO-Crate
-object or a path to a valid RO-Crate. If so, then \code{connection} is
-required (default: \code{rocrateR::rocrate_5s()}).}
+\item{connection}{Connection object for the 'DataSHIELD' server where the
+values will be extracted from (e.g., OBiBa's Opal). Optional, if \code{x} is
+set to a connection object. If so, then \code{rocrate} is required.}
 }
 \value{
 Updated RO-Crate object with Safe Project information.

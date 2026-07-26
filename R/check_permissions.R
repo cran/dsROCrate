@@ -7,6 +7,8 @@
 #'
 #' @param x A backend connection object.
 #' @param ... Additional arguments passed to methods.
+#' @param verbose Boolean value used to indicate if a success message should be
+#'     displayed (default: FALSE)
 #'
 #' @returns
 #' Returns `TRUE` invisibly if the connection has sufficient permissions.
@@ -19,6 +21,7 @@ check_permissions <- function(x, ...) {
   UseMethod("check_permissions")
 }
 
+# @rdname check_permissions
 #' @export
 check_permissions.default <- function(x, ...) {
   stop(
@@ -33,22 +36,38 @@ check_permissions.default <- function(x, ...) {
   )
 }
 
+#' @rdname check_permissions
 #' @export
-check_permissions.opal <- function(x, ...) {
+check_permissions.ArmadilloCredentials <- function(x, ...) {
+  stop(
+    paste0(
+      "`check_permissions()` for the Armadillo backend is ",
+      "not currently implemented!"
+    ),
+    call. = FALSE
+  )
+}
+
+#' @rdname check_permissions
+#' @export
+check_permissions.opal <- function(x, ..., verbose = FALSE) {
   is_admin <- FALSE
   is_audit <- FALSE
 
   is_admin <- tryCatch(
-    is_opal_admin_con(x),
+    is_admin_con(x),
     error = function(e) FALSE
   )
 
   is_audit <- tryCatch(
-    is_opal_audit_con(x),
+    is_audit_con(x),
     error = function(e) FALSE
   )
 
   if (isTRUE(is_admin) || isTRUE(is_audit)) {
+    if (verbose) {
+      message("You are ready to audit this system!")
+    }
     return(invisible(TRUE))
   }
 

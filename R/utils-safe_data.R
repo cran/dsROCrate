@@ -16,7 +16,7 @@ extract_safe_data <- function(x, ...) {
 #' @export
 extract_safe_data.opal <- function(x, ..., rocrate = rocrateR::rocrate_5s()) {
   # extract list with all projects
-  ds <- opalr::opal.projects(x)
+  ds <- backend_projects(x)
 
   # extract project names and ignore NAs
   projects <- ds$name[!is.na(ds$name) & !is.null(ds$name)]

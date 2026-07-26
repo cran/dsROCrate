@@ -13,6 +13,15 @@ report <- function(x, ...) {
 
 #' @rdname report
 #' @export
+report.ArmadilloCredentials <- function(x, ...) {
+  stop(
+    "The `report()` for the Armadillo backend is not currently implemented!",
+    call. = FALSE
+  )
+}
+
+#' @rdname report
+#' @export
 report.character <- function(
   x,
   ...,
@@ -45,7 +54,7 @@ report.character <- function(
     )
 }
 
-#' @rdname report
+# @rdname report
 #' @export
 report.default <- function(x, ...) {
   stop(
@@ -495,11 +504,11 @@ report.rocrate <- function(
   safe_output_tbl_v2 <- tibble::tibble()
 
   if (!is.null(safe_output_tbl) && nrow(safe_output_tbl) > 0) {
-    # split `table` into `project` and `table`
+    # split `asset` into `project` and `asset`
     safe_output_tbl_v2 <- safe_output_tbl |>
       dplyr::mutate(
-        project = gsub("(?=\\.).*$", "", table, perl = TRUE),
-        asset = gsub("^.*(?<=\\.)", "", table, perl = TRUE)
+        project = gsub("(?=\\.).*$", "", asset, perl = TRUE),
+        asset = gsub("^.*(?<=\\.)", "", asset, perl = TRUE)
       ) |>
       dplyr::distinct(project, asset, user, fx, timestamp)
 
@@ -511,8 +520,8 @@ report.rocrate <- function(
       ) |>
       # replace 'NA' in fx & timestamp with empty string
       dplyr::mutate(
-        timestamp = dplyr::case_when(is.na(timestamp) ~ "", T ~ timestamp),
-        fx = dplyr::case_when(is.na(fx) ~ "", T ~ fx)
+        timestamp = dplyr::case_when(is.na(timestamp) ~ "", TRUE ~ timestamp),
+        fx = dplyr::case_when(is.na(fx) ~ "", TRUE ~ fx)
       )
   }
 
@@ -535,7 +544,7 @@ report.rocrate <- function(
   report_contents <- c(
     .markdown_report_header(title, overview_tbl, overview_lst$diag_path),
     tidy_overview_tbl |>
-      # # tidy up duplicated values in `project` and `table`
+      # # tidy up duplicated values in `project` and `asset`
       # dplyr::mutate(
       #   Project = unfill_vec(Project),
       #   Data = unfill_vec(Data)

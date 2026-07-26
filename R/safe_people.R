@@ -30,11 +30,21 @@ safe_people <- function(x, ...) {
   UseMethod("safe_people")
 }
 
+# @rdname safe_people
 #' @export
 safe_people.default <- function(x, ...) {
   stop(
     "Unknown class, please try either a file path or",
     " an object with `rocrate` class!"
+  )
+}
+
+#' @rdname safe_people
+#' @export
+safe_people.ArmadilloCredentials <- function(x, ...) {
+  stop(
+    "`safe_people()` for the Armadillo backend is not currently implemented!",
+    call. = FALSE
   )
 }
 

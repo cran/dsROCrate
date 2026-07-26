@@ -47,3 +47,56 @@ print.cr8tor_bundle <- function(x, ...) {
 
   invisible(x)
 }
+
+#' @export
+print.safe_call <- function(x, ...) {
+  msg <- "<safe_call>"
+  msg <- c(msg, paste("Function:", paste0(x$package, "::", x$fx)))
+
+  if (length(x$args)) {
+    msg <- c(msg, "Arguments:")
+    msg <- c(
+      msg,
+      purrr::map2(x$args, names(x$args), function(arg_val, arg_name) {
+        if ("safe_symbol" %in% class(arg_val)) {
+          paste0("    ", arg_name, " = ", arg_val$symbol, collapse = "\n")
+        } else {
+          paste0("    ", arg_name, " = ", unlist(arg_val), collapse = "\n")
+        }
+      })
+    )
+    # msg <- c(
+    #   msg,
+    #   paste0("    ", names(x$args), " = ", unlist(x$args), collapse = "\n")
+    # )
+  }
+
+  message(paste0(msg, collapse = "\n"))
+
+  invisible(x)
+}
+
+#' @export
+print.safe_symbol <- function(x, ...) {
+  msg <- "<safe_symbol>"
+
+  msg <- c(msg, paste("ID     :", x$id))
+  msg <- c(msg, paste("Symbol :", x$symbol))
+  msg <- c(msg, paste("Kind   :", x$kind))
+
+  if (!is.null(x$asset)) {
+    msg <- c(msg, paste("Asset  :", x$asset))
+  }
+
+  if (!is.null(x$column)) {
+    msg <- c(msg, paste("Column :", x$column))
+  }
+
+  if (!is.null(x$parent)) {
+    msg <- c(msg, paste("Parent :", x$parent))
+  }
+
+  message(paste0(msg, collapse = "\n"))
+
+  invisible(x)
+}

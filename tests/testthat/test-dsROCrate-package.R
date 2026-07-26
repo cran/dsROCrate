@@ -1,6 +1,6 @@
 test_that("All Rd files have a value section", {
-  db <- tools::Rd_db("dsROCrate")
-
+  man_dir <- testthat::test_path("..", "man")
+  db <- list.files(man_dir, pattern = "\\.Rd$", full.names = TRUE)
   # drop the package-level Rd (e.g., "dsROCrate-package")
   db <- db[!grepl("-package\\.Rd$", names(db))]
 

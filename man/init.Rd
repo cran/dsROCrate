@@ -2,11 +2,14 @@
 % Please edit documentation in R/dsROCrate.R
 \name{init}
 \alias{init}
+\alias{init.ArmadilloCredentials}
 \alias{init.opal}
 \alias{init.rocrate}
 \title{Initialise a Five Safes RO-Crate}
 \usage{
 init(x, ...)
+
+\method{init}{ArmadilloCredentials}(x, ...)
 
 \method{init}{opal}(
   x,
@@ -34,7 +37,7 @@ init(x, ...)
 }
 \arguments{
 \item{x}{This can be a connection to a 'DataSHIELD' server (e.g., object with
-the \code{opal} class, see \code{\link[opalr:opal.login]{opalr::opal.login()}}), an RO-Crate
+the \code{opal} or \code{ArmadilloCredentials} classes), an RO-Crate
 (\link[rocrateR:rocrate]{rocrate} class) or a string with the path to an
 RO-Crate.}
 

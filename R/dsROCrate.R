@@ -3,7 +3,7 @@
 #' Creates a new RO-Crate configured for Five Safes auditing.
 #'
 #' @param x This can be a connection to a 'DataSHIELD' server (e.g., object with
-#'     the `opal` class, see [opalr::opal.login()]), an RO-Crate
+#'     the `opal` or `ArmadilloCredentials` classes), an RO-Crate
 #'     ([rocrate][rocrateR::rocrate()] class) or a string with the path to an
 #'     RO-Crate.
 #' @param ... Other optional arguments. See the full documentation,
@@ -39,6 +39,15 @@
 #' @export
 init <- function(x, ...) {
   UseMethod("init")
+}
+
+#' @rdname init
+#' @export
+init.ArmadilloCredentials <- function(x, ...) {
+  stop(
+    "`init()` for the Armadillo backend is not currently implemented!",
+    call. = FALSE
+  )
 }
 
 #' @rdname init
@@ -94,5 +103,5 @@ init.rocrate <- function(
   )
 }
 
-# # helper functions ----
-# `%||%` <- function(a, b) if (!is.null(a) && !is.na(a) && a != "") a else b
+# helper functions ----
+`%||%` <- function(a, b) if (!is.null(a) && !is.na(a) && a != "") a else b

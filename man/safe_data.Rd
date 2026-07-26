@@ -2,6 +2,7 @@
 % Please edit documentation in R/safe_data.R
 \name{safe_data}
 \alias{safe_data}
+\alias{safe_data.ArmadilloCredentials}
 \alias{safe_data.character}
 \alias{safe_data.opal}
 \alias{safe_data.rocrate}
@@ -14,6 +15,8 @@
 }
 \usage{
 safe_data(x, ...)
+
+\method{safe_data}{ArmadilloCredentials}(x, ...)
 
 \method{safe_data}{character}(
   x,
@@ -60,7 +63,7 @@ safe_data(x, ...)
 }
 \arguments{
 \item{x}{This can be a connection to a 'DataSHIELD' server (e.g., object with
-the \code{opal} class, see \code{\link[opalr:opal.login]{opalr::opal.login()}}), an RO-Crate
+the \code{opal} or \code{ArmadilloCredentials} classes), an RO-Crate
 (\link[rocrateR:rocrate]{rocrate} class) or a string with the path to an
 RO-Crate.}
 

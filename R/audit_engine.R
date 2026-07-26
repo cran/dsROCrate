@@ -3,9 +3,9 @@
 #' Internal function to create audits for various back-ends.
 #'
 #' @param x This can be a connection to a 'DataSHIELD' server (e.g., object with
-#'     the `opal` class, see [opalr::opal.login()]). Alternatively, a governance
-#'     archive file, representing the intent of a project and associated
-#'     governance details.
+#'     the `opal` or `ArmadilloCredentials` classes). Alternatively, a
+#'     governance archive file, representing the intent of a project and
+#'     associated governance details.
 #' @param ... Other optional arguments, see full documentation for details.
 #' @param project String with project name(s) from which to extra Safe Project
 #'     details.
@@ -24,6 +24,17 @@
 #' @noRd
 audit_engine <- function(x, ...) {
   UseMethod("audit_engine")
+}
+
+#' @export
+audit_engine.default <- function(x, ...) {
+  stop(
+    sprintf(
+      "No `audit_engine()` method exists for objects of class: %s.",
+      paste(class(x), collapse = ", ")
+    ),
+    call. = FALSE
+  )
 }
 
 #' @export
@@ -57,7 +68,7 @@ audit_engine.opal <- function(
   path = NULL
 ) {
   # local bindings
-  name <- permission <- principal <- NULL
+  name <- NULL
 
   # create RO-Create with the 5 safes profile
   crate <- rocrateR::rocrate_5s()
@@ -65,13 +76,13 @@ audit_engine.opal <- function(
   # validate backend
   validate_backend(x, ...)
 
-  # if `project` is missing, then ~extract all project names~ error
+  # if `project` is missing, then error
   if (is.null(project)) {
     stop("A `project` name is required!", call. = FALSE)
   }
 
   # extract list with all projects to verify `project` contains a valid value
-  ds <- opalr::opal.projects(x)
+  ds <- backend_projects(x)
   server_prjs <- ds[, "name"]
   idx <- project %in% server_prjs
   if (!all(idx)) {
@@ -86,41 +97,30 @@ audit_engine.opal <- function(
 
   # Safe People ----
   # get users' details
-  safe_people_tbl <- opalr::oadmin.user_profiles(x, df = FALSE) |>
-    dplyr::bind_rows() |>
-    dplyr::rename(name = principal) |>
-    # exclude system administrators from the report
-    dplyr::filter(!(tolower(name) %in% c("admin", "administrator")))
-
-  # if any users were found, then verify if they are admin/auditors and exclude
-  if (nrow(safe_people_tbl)) {
-    # extract system permissions
-    sys_perms_tbl <- opalr::oadmin.system_perm(x)
-    safe_people_tbl <- tryCatch(
-      {
-        safe_people_tbl |>
-          dplyr::left_join(sys_perms_tbl, by = c("name" = "subject")) |>
-          dplyr::filter(!(permission %in% c("administrate", "audit")))
-      },
-      error = function(e) {
-        tibble::tibble()
-      }
-    )
-  }
-
+  safe_people_tbl <- filter_safe_people(x)
   if (!is.null(user)) {
     safe_people_tbl <- safe_people_tbl |>
       dplyr::filter(tolower(name) %in% user)
+  }
 
-    if (nrow(safe_people_tbl) == 0) {
-      stop(
+  # an audit report is not meaningful without Safe People details, whether
+  # that's because a `user` filter matched nobody, or because the
+  # permission lookup itself could not be completed
+  if (nrow(safe_people_tbl) == 0) {
+    stop(
+      if (is.null(user)) {
+        paste(
+          "No Safe People details could be found for this project - the",
+          "audit cannot proceed."
+        )
+      } else {
         sprintf(
           "No Safe People details were found for the user: %s!",
           paste0("'", user, "'", collapse = ", ")
-        ),
-        call. = FALSE
-      )
-    }
+        )
+      },
+      call. = FALSE
+    )
   }
 
   crate <- safe_people_tbl$name |>

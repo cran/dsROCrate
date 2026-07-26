@@ -398,6 +398,12 @@ test_that("report.list aggregates outputs from a study audit", {
 })
 
 test_that("report.list handles missing outputs from a study audit", {
+  # create temporary file
+  tmp_dir <- file.path(tempdir(), "dsROCRate_tests")
+  dir.create(tmp_dir, recursive = TRUE)
+  on.exit(unlink(tmp_dir, recursive = TRUE, force = TRUE))
+  out_file <- file.path(tmp_dir, "report.md")
+
   testthat::with_mocked_bindings(
     report = function(...) list(),
     code = {
@@ -405,7 +411,7 @@ test_that("report.list handles missing outputs from a study audit", {
         list(server1 = rocrateR::rocrate_5s()),
         study_name = "StudyX",
         render = FALSE,
-        filepath = tempfile(fileext = ".md")
+        filepath = out_file
       )
 
       expect_type(result, "list")

@@ -189,6 +189,13 @@ add_permission_entities_cr8tor <- function(rc, perm_expanded_tbl) {
   rc
 }
 
+#' Add Safe Setting entities
+#'
+#' @param rc RO-Crate object, see [rocrateR::rocrate].
+#' @param tbl Tibble with settings details.
+#'
+#' @return Updated RO-Crate
+#' @noRd
 add_safe_setting_entities_cr8tor <- function(rc, tbl) {
   for (i in seq_len(nrow(tbl))) {
     nm <- names(tbl)[i]
@@ -207,6 +214,13 @@ add_safe_setting_entities_cr8tor <- function(rc, tbl) {
   rc
 }
 
+#' Add Safe Output entities
+#'
+#' @param rc RO-Crate object, see [rocrateR::rocrate].
+#' @param tbl Tibble with settings details.
+#'
+#' @return Updated RO-Crate
+#' @noRd
 add_safe_output_entities_cr8tor <- function(rc, tbl) {
   rc |>
     rocrateR::add_entity(
@@ -291,7 +305,6 @@ as_rocrate_audit <- function(audit) {
 
   rc
 }
-
 
 #' Keep strongest permission per user-asset pair
 #'
@@ -519,6 +532,11 @@ extract_safe_people_cr8tor <- function(bundle) {
   list(users = users, n_users = nrow(users))
 }
 
+#' Extract user's groups
+#'
+#' @param bundle cr8tor_bundle
+#' @return tibble(username, group)
+#' @noRd
 extract_user_groups_cr8tor <- function(bundle) {
   user_docs <- bundle$resources[
     grepl("user-.*\\.ya?ml$", names(bundle$resources))
@@ -543,6 +561,11 @@ extract_user_groups_cr8tor <- function(bundle) {
     purrr::list_c()
 }
 
+#' Extract user's projects
+#'
+#' @param bundle cr8tor_bundle
+#' @return tibble(username, project)
+#' @noRd
 extract_user_projects_cr8tor <- function(bundle) {
   # local bindings
   description <- group_id <- NULL
@@ -581,6 +604,11 @@ extract_user_projects_cr8tor <- function(bundle) {
     dplyr::distinct()
 }
 
+#' Extract groups
+#'
+#' @param bundle cr8tor_bundle
+#' @return tibble(group_id, description, project)
+#' @noRd
 extract_groups_cr8tor <- function(bundle) {
   grp_docs <- bundle$resources[
     grepl("group-.*\\.ya?ml$", names(bundle$resources))
@@ -651,6 +679,11 @@ extract_permissions_cr8tor <- function(bundle) {
     purrr::list_c()
 }
 
+#' Extract projects
+#'
+#' @param bundle cr8tor_bundle
+#' @return tibble(project, description)
+#' @noRd
 extract_projects_cr8tor <- function(bundle) {
   prj_docs <- bundle$resources[
     grepl("project-.*\\.ya?ml$", names(bundle$resources))
@@ -733,6 +766,14 @@ find_bagit_root <- function(path) {
   return(NULL)
 }
 
+#' Link people entities to the RO-Crate root
+#'
+#' @param rc RO-Crate object, see [rocrateR::rocrate].
+#' @param usernames Vector of strings with usernames.
+#'
+#' @returns Updated RO-Crate
+#' @keywords internal
+#' @noRd
 link_people_to_root <- function(rc, usernames) {
   authors <- lapply(usernames, \(u) {
     list(`@id` = id_hash("#person:", u))
@@ -764,17 +805,31 @@ load_cr8tor_bundle <- function(x, ...) {
   tmp <- tempfile("cr8tor_")
   dir.create(tmp, recursive = TRUE, showWarnings = FALSE)
 
-  utils::unzip(x, exdir = tmp)
+  ok <- tryCatch(
+    {
+      utils::unzip(x, exdir = tmp)
+      TRUE
+    },
+    warning = function(w) FALSE,
+    error = function(e) FALSE
+  )
+
+  if (!ok) {
+    stop("Not a valid cr8tor bundle.", call. = FALSE)
+  }
+
+  # get root directory for bag
+  bagit_root <- find_bagit_root(tmp)
 
   # load RO-Crate layer
   rocrate <- rocrateR::load_rocrate(
-    x, #file.path(tmp, "bagit"),
+    bagit_root,
     load_content = TRUE,
     ...
   )
 
-  tmp_root <- find_bagit_root(tmp) |>
-    dirname()
+  # get base dir
+  tmp_root <- dirname(bagit_root)
 
   # parse resources layer
   res_dir <- file.path(tmp_root, "resources")
@@ -804,6 +859,15 @@ load_cr8tor_bundle <- function(x, ...) {
   )
 }
 
+#' Map project name to ID
+#'
+#' @param project String with project name.
+#' @param proj_tbl Tibble with projects' details.
+#'
+#' @returns Project ID if one is matched to the given `project`
+#' @keywords internal
+#'
+#' @noRd
 map_project_name_to_id <- function(project, proj_tbl) {
   idx <- which(proj_tbl$description == project)
   if (length(idx) == 0) {

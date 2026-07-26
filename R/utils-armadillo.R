@@ -7,6 +7,11 @@
 #'
 #' @returns MOLGENIS' Armadillo connection object.
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#'   armadillo_login("https://armadillo-playground.molgenis.net/")
+#' }
 armadillo_login <- function(server) {
   conn <- DSMolgenisArmadillo::armadillo.get_credentials(server)
   ns <- loadNamespace("MolgenisArmadillo")

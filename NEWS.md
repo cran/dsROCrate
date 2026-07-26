@@ -1,3 +1,35 @@
+# dsROCrate 0.2.0
+
+## Breaking Changes
+
+* The audit log tibble returned via `safe_output()` no longer includes a `table` column. It has been replaced by three more granular columns: `kind` (whether the tracked object is a `table`, `resource` or `expression`), `asset` (the resolved table/resource name) and `expr` (the associated R expression, when applicable). Code that reads the `table` column directly will need to be updated.
+
+## New Features
+
+* Added a symbol registry and call-tracking system (`safe_symbol()`, `safe_call()`, `safe_reference()`, `symbol_registry()`) that replaces regex-based parsing of Opal logs, modelling assignments and aggregate function calls as objects and resolving arguments back to the symbols/tables they reference.
+* Added a generic backend abstraction layer (`backend_logs()`, `backend_options()`, `backend_users()`, `backend_projects()`, `backend_sys_perms()`, and others) so internal code no longer calls `opalr::` directly, paving the way for additional backends.
+* Added early Armadillo backend scaffolding: `check_permissions()`, `init()`, `report()`, `safe_data()`, `safe_output()`, `safe_people()` and `safe_setting()` now all have `ArmadilloCredentials` methods, returning clear "not yet implemented" errors ahead of full support.
+* Added `default` S3 methods for `audit()`, `audit_engine()` and `check_permissions()`, giving clearer errors when an unsupported connection object is supplied.
+* Added a `verbose` argument to `check_permissions()` (opal method) to optionally print a success message when permissions are sufficient.
+* Added `print.safe_call()` and `print.safe_symbol()` methods, plus `as.data.frame()` methods for `safe_call` and `symbol_registry` objects, for readable inspection of the new internal tracking objects.
+
+## Improvements
+
+* `safe_people()` now determines admin/auditor status from actual system permissions and group membership, rather than a hardcoded name check against `"admin"`/`"administrator"`, improving compatibility with deployments that use differently named privileged accounts.
+* Permission lookup failures during `safe_people()` now fall back gracefully to an empty result instead of aborting the whole audit.
+* Consolidated backend-version and connection-validation logic into the new generic backend framework, reducing duplication between Opal-specific code paths.
+
+## Documentation
+
+* Removed a vignette section demonstrating direct calls to internal helper functions, which have since been renamed as part of the backend abstraction work.
+* Updated documentation to reflect that `init()`, `safe_data()`, `report()` and related functions now accept either `opal` or `ArmadilloCredentials` connections.
+
+## Internal Changes
+
+* Added test coverage for `audit()`, `audit_engine()` and `check_permissions()`, along with a mock-connection test helper, reducing reliance on a live demo Opal server.
+* Added `uuid` to `Imports`, used to generate unique IDs for tracked symbols.
+* Bumped the `testthat` version requirement in `Suggests` from `>= 3.0.0` to `>= 3.1.4`.
+
 # dsROCrate 0.1.0
 
 ## New Features

@@ -16,3 +16,8 @@ MOLGENIS' Armadillo connection object.
 Login to a MOLGENIS' Armadillo server. Wrapper for the function
 \code{\link[DSMolgenisArmadillo:armadillo.get_credentials]{DSMolgenisArmadillo::armadillo.get_credentials()}}.
 }
+\examples{
+\dontrun{
+  armadillo_login("https://armadillo-playground.molgenis.net/")
+}
+}

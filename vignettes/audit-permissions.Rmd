@@ -124,10 +124,3 @@ Ensure the connected user has the permissions required for the
 target backend.
 
 See the backend-specific sections in this vignette for details.
-
-## Testing Opal permissions directly
-
-```{r eval = FALSE}
-dsROCrate::is_opal_admin_con(con)
-dsROCrate::is_opal_audit_con(con)
-```

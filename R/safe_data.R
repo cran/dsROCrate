@@ -15,7 +15,7 @@
 #' <https://www.researchdata.scot/engage-and-learn/data-explainers/what-is-data-de-identification/>
 #'
 #' @param x This can be a connection to a 'DataSHIELD' server (e.g., object with
-#'     the `opal` class, see [opalr::opal.login()]), an RO-Crate
+#'     the `opal` or `ArmadilloCredentials` classes), an RO-Crate
 #'     ([rocrate][rocrateR::rocrate()] class) or a string with the path to an
 #'     RO-Crate.
 #' @param ... Other optional arguments. See the full documentation,
@@ -40,11 +40,21 @@ safe_data <- function(x, ...) {
   UseMethod("safe_data")
 }
 
+# @rdname safe_data
 #' @export
 safe_data.default <- function(x, ...) {
   stop(
     "Unknown class, please try either a file path or",
     " an object with `rocrate` class!"
+  )
+}
+
+#' @rdname safe_data
+#' @export
+safe_data.ArmadilloCredentials <- function(x, ...) {
+  stop(
+    "`safe_data()` for the Armadillo backend is not currently implemented!",
+    call. = FALSE
   )
 }
 

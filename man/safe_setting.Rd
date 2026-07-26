@@ -2,6 +2,7 @@
 % Please edit documentation in R/safe_setting.R
 \name{safe_setting}
 \alias{safe_setting}
+\alias{safe_setting.ArmadilloCredentials}
 \alias{safe_setting.character}
 \alias{safe_setting.cr8tor}
 \alias{safe_setting.opal}
@@ -15,6 +16,8 @@
 }
 \usage{
 safe_setting(x, ...)
+
+\method{safe_setting}{ArmadilloCredentials}(x, ...)
 
 \method{safe_setting}{character}(
   x,
@@ -56,7 +59,7 @@ safe_setting(x, ...)
 }
 \arguments{
 \item{x}{This can be a connection to a 'DataSHIELD' server (e.g., object with
-the \code{opal} class, see \code{\link[opalr:opal.login]{opalr::opal.login()}}), an RO-Crate
+the \code{opal} or \code{ArmadilloCredentials} classes), an RO-Crate
 (\link[rocrateR:rocrate]{rocrate} class) or a string with the path to an
 RO-Crate.}
 

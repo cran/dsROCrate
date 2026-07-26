@@ -13,7 +13,3 @@ knitr::opts_chunk$set(
 # 
 # dsROCrate::check_permissions(con)
 
-## ----eval = FALSE-------------------------------------------------------------
-# dsROCrate::is_opal_admin_con(con)
-# dsROCrate::is_opal_audit_con(con)
-
