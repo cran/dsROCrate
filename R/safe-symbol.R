@@ -11,12 +11,30 @@ as_tibble.safe_symbol <- function(x, ...) {
     created_at = x$created_at,
     user = x$user,
     session = x$session,
-    action = x$action #,
-    # metadata = x$metadata,
-    # stringsAsFactors = FALSE
+    action = x$action
   )
 }
 
+#' Create new `safe_symbol` object
+#'
+#' @param symbol Symbol object.
+#' @param version Version number.
+#' @param kind Type of symbol.
+#' @param asset Associated asset.
+#' @param expr Associated expression.
+#' @param depends_on Symbol dependencies.
+#' @param created_by DataSHIELD function used to create the symbol.
+#' @param created_at Creation date.
+#' @param user Username.
+#' @param session Unique session ID.
+#' @param action Action type.
+#' @param metadata Additional metadata.
+#' @param id Unique symbol ID.
+#'
+#' @returns New `safe_symbol` object.
+#' @keywords internal
+#'
+#' @noRd
 new_safe_symbol <- function(
   symbol,
   version = -999,
@@ -55,23 +73,15 @@ new_safe_symbol <- function(
   )
 }
 
-new_safe_symbol_reference <- function(symbol, column = NULL) {
-  stopifnot(is.character(symbol))
-  stopifnot(length(symbol) == 1)
-
-  structure(
-    list(
-      symbol = symbol,
-      column = column
-    ),
-    class = "safe_symbol_reference"
-  )
-}
-
+#' Safe symbol details
+#'
+#' @param symbol Symbol object.
+#' @param ... Additional arguments.
+#'
+#' @returns Object with the class `safe_symbol`.
+#' @keywords internal
+#'
+#' @noRd
 safe_symbol <- function(symbol, ...) {
   new_safe_symbol(symbol = symbol, ...)
-}
-
-safe_symbol_reference <- function(symbol, ...) {
-  new_safe_symbol_reference(symbol = symbol, ...)
 }

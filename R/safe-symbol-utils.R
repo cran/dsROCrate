@@ -1,9 +1,19 @@
+#' Find symbols in a given expression
+#'
+#' @param expr Object with R expression.
+#'
+#' @returns A list with a reference, if any is found.
+#' @keywords internal
+#'
+#' @noRd
 find_symbols <- function(expr) {
+  # parse expression if given value is a character
   if (is.character(expr)) {
     expr <- parse(text = expr)[[1]]
   }
 
   recurse <- function(x) {
+    # check if the given object is a symbol
     if (is.symbol(x)) {
       return(list(list(
         symbol = as.character(x),
@@ -11,10 +21,12 @@ find_symbols <- function(expr) {
       )))
     }
 
+    # check if the given objects is NOT a call
     if (!is.call(x)) {
       return(list())
     }
 
+    # check if the given object is of the format `symbol$column`
     if (identical(x[[1]], quote(`$`))) {
       lhs <- x[[2]]
       out <- list(list(
@@ -25,6 +37,7 @@ find_symbols <- function(expr) {
       return(out)
     }
 
+    # return recursive call of the original subset
     unlist(
       lapply(as.list(x)[-1], recurse),
       recursive = FALSE
@@ -32,6 +45,7 @@ find_symbols <- function(expr) {
   }
 
   refs <- recurse(expr)
+  # filter out symbols from base packages
   refs <- Filter(\(x) !(x$symbol %in% c("base", "stats", "utils")), refs)
   if (!length(refs)) {
     return(NULL)
@@ -39,17 +53,28 @@ find_symbols <- function(expr) {
   refs
 }
 
+#' Resolve expression dependencies
+#'
+#' @param expr Object with R expression.
+#' @param registry Symbol registry object.
+#'
+#' @returns Tibble object with expression dependencies' details.
+#' @keywords internal
+#'
+#' @noRd
 resolve_dependencies <- function(expr, registry) {
   if (is.null(expr) || is.na(expr)) {
     return(tibble::tibble())
   }
 
+  # find symbols for the given expression
   refs <- find_symbols(expr)
 
   if (is.null(refs)) {
     return(tibble::tibble())
   }
 
+  # look up symbol details for each reference found previously
   purrr::map_dfr(refs, function(ref) {
     sym <- lookup_symbol(ref$symbol, registry)
 
@@ -63,6 +88,16 @@ resolve_dependencies <- function(expr, registry) {
   })
 }
 
+#' Resolve provenance of symbol
+#'
+#' @param symbol_id String with unique symbol ID.
+#' @param registry Symbol registry object.
+#' @param visited Vector with symbol IDs that have been processed.
+#'
+#' @returns Tibble object with details of provenance for symbol.
+#' @keywords internal
+#'
+#' @noRd
 resolve_provenance <- function(symbol_id, registry, visited = character()) {
   # local bindings
   id <- NULL
@@ -91,6 +126,15 @@ resolve_provenance <- function(symbol_id, registry, visited = character()) {
   dplyr::bind_rows(deps, children)
 }
 
+#' Resolve symbol's asset
+#'
+#' @param symbol_id String with unique symbol ID.
+#' @param registry Symbol registry object.
+#'
+#' @returns String with asset(s) linked to symbol ID.
+#' @keywords internal
+#'
+#' @noRd
 resolve_symbol_asset <- function(symbol_id, registry) {
   # local binding
   asset <- id <- kind <- NULL

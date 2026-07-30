@@ -1,3 +1,22 @@
+# dsROCrate 0.2.1
+
+## Bug Fixes
+
+* Removed a duplicate, conflicting definition of `as.data.frame.safe_call()` (two files each defined this S3 method with different output columns; only one could ever take effect, silently). The `safe-call.R` version — timestamp, user, r_cmd, fx, args, session, profile — is now the sole implementation.
+* Fixed `print.safe_symbol()` referencing stale `column`/`parent` fields left over from before the 0.2.0 symbol-model refactor; it now correctly displays the symbol's `asset`, `expr`, and `session` (guarding on both `NULL` and `NA`, since these fields default to `NA_character_`).
+* Fixed `as.data.frame.symbol_registry()`, which previously iterated over the columns of the underlying tibble instead of its rows (via `lapply()` on a data frame), causing it to error whenever called on a non-empty registry. It also referenced non-existent `parent`/`column` fields. The method now simply returns `x$symbols` coerced to a data frame, which already carries the correct columns.
+* Fixed `register_symbol()` erroring on a brand-new, empty registry (the very first symbol registered in any session): the emptiness check compared `nrow()` of a plain, pre-tibble `list()` before checking `length()`, producing a zero-length logical passed to `||`. The `length()` check is now evaluated first, so it short-circuits correctly.
+* Fixed `as.data.frame.safe_call()`'s `args` column having an unstable name and shape depending on how many arguments the underlying call had (a single-argument call collapsed the column into one named after that argument, e.g. `x`; multiple arguments spread into several columns instead of one). The argument list is now wrapped with `I(list(...))` so it always appears as a single, reliably-named `args` list-column.
+* Added regression tests for `safe_call()`/`as.data.frame.safe_call()`, `print.safe_symbol()`, and `register_symbol()`/`as.data.frame.symbol_registry()`, none of which previously had any test coverage.
+
+## Internal Changes
+
+* Removed unused internal helpers: `has_symbol()`/`has_symbol.symbol_registry()` (and its S3 export) and `safe_symbol_reference()`/`new_safe_symbol_reference()`, none of which were called anywhere in the package.
+* Removed leftover commented-out code from `safe_symbol()` and `print.safe_call()`.
+* Added roxygen2 documentation (`@param`, `@returns`, `@keywords internal`, `@noRd`) and explanatory comments to the internal symbol-tracking functions introduced in 0.2.0 (`safe_call()`, `safe_symbol()`, `safe_reference()`, `symbol_registry()`, and their supporting utilities), with no change in behaviour.
+* Updated spell-check `WORDLIST`.
+* Re-rendered vignettes to refresh example output.
+
 # dsROCrate 0.2.0
 
 ## Breaking Changes

@@ -1,6 +1,6 @@
 Package: dsROCrate
 Title: 'DataSHIELD' RO-Crate Governance Functions
-Version: 0.2.0
+Version: 0.2.1
 Authors@R: c(
     person(given = "Roberto",
            family = "Villegas-Diaz",
@@ -40,7 +40,7 @@ URL: https://github.com/FederatedMethods/dsROCrate
 BugReports: https://github.com/FederatedMethods/dsROCrate/issues
 Config/roxygen2/version: 8.0.0
 NeedsCompilation: no
-Packaged: 2026-07-26 20:21:28 UTC; robertovillegas-diaz
+Packaged: 2026-07-30 11:56:32 UTC; robertovillegas-diaz
 Author: Roberto Villegas-Diaz [aut, cre] (ORCID:
     <https://orcid.org/0000-0001-5036-8661>),
   Becca Wilson [aut] (ORCID: <https://orcid.org/0000-0003-2294-593X>),
@@ -49,4 +49,4 @@ Author: Roberto Villegas-Diaz [aut, cre] (ORCID:
   University of Liverpool [cph]
 Maintainer: Roberto Villegas-Diaz <r.villegas-diaz@outlook.com>
 Repository: CRAN
-Date/Publication: 2026-07-26 20:40:02 UTC
+Date/Publication: 2026-07-30 15:30:02 UTC

@@ -5,13 +5,26 @@ as.data.frame.safe_call <- function(x, ...) {
     user = x$user,
     r_cmd = x$original,
     fx = paste0(x$package, x$namespace, x$fx),
-    args = x$args,
+    args = I(list(x$args)),
     session = x$session,
     profile = x$profile,
     stringsAsFactors = FALSE
   )
 }
 
+#' Create new `safe_call` object
+#'
+#' @param original Original function call.
+#' @param package Function's package.
+#' @param namespace Function's namespace.
+#' @param fx Function's name.
+#' @param args List with arguments.
+#' @param ... Additional arguments.
+#'
+#' @returns New `safe_call` object.
+#' @keywords internal
+#'
+#' @noRd
 new_safe_call <- function(
   original,
   package,
@@ -40,6 +53,15 @@ new_safe_call <- function(
   )
 }
 
+#' Safe call details
+#'
+#' @param call Object with function call.
+#' @param ... Additional arguments.
+#'
+#' @returns Object with the class `safe_call`.
+#' @keywords internal
+#'
+#' @noRd
 safe_call <- function(call, ...) {
   UseMethod("safe_call")
 }

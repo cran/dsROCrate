@@ -65,10 +65,6 @@ print.safe_call <- function(x, ...) {
         }
       })
     )
-    # msg <- c(
-    #   msg,
-    #   paste0("    ", names(x$args), " = ", unlist(x$args), collapse = "\n")
-    # )
   }
 
   message(paste0(msg, collapse = "\n"))
@@ -84,16 +80,16 @@ print.safe_symbol <- function(x, ...) {
   msg <- c(msg, paste("Symbol :", x$symbol))
   msg <- c(msg, paste("Kind   :", x$kind))
 
-  if (!is.null(x$asset)) {
+  if (!is.null(x$asset) && !is.na(x$asset)) {
     msg <- c(msg, paste("Asset  :", x$asset))
   }
 
-  if (!is.null(x$column)) {
-    msg <- c(msg, paste("Column :", x$column))
+  if (!is.null(x$expr) && !is.na(x$expr)) {
+    msg <- c(msg, paste("Expression :", x$expr))
   }
 
-  if (!is.null(x$parent)) {
-    msg <- c(msg, paste("Parent :", x$parent))
+  if (!is.null(x$session) && !is.na(x$session)) {
+    msg <- c(msg, paste("Session :", x$session))
   }
 
   message(paste0(msg, collapse = "\n"))

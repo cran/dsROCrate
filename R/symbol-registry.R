@@ -1,41 +1,30 @@
 #' @export
 as.data.frame.symbol_registry <- function(x, ...) {
-  do.call(
-    rbind,
-    lapply(
-      x$symbols,
-      function(sym) {
-        data.frame(
-          symbol = sym$symbol,
-          kind = sym$kind,
-          asset = sym$asset,
-          parent = sym$parent,
-          column = sym$column,
-          stringsAsFactors = FALSE
-        )
-      }
-    )
-  )
+  as.data.frame(x$symbols)
 }
 
-has_symbol <- function(registry, name) {
-  UseMethod("has_symbol")
-}
-
-#' @export
-has_symbol.symbol_registry <- function(registry, name) {
-  name %in% names(registry$symbols)
-}
-
+#' Create new `symbol_registry` object
+#'
+#' @param symbols List of symbols.
+#'
+#' @returns New `symbol_registry` object.
+#' @keywords internal
+#'
+#' @noRd
 new_symbol_registry <- function(symbols = list()) {
-  structure(
-    list(
-      symbols = symbols
-    ),
-    class = "symbol_registry"
-  )
+  structure(list(symbols = symbols), class = "symbol_registry")
 }
 
+#' Look-up symbol in registry.
+#'
+#' @param symbol Symbol object.
+#' @param registry Symbol registry object.
+#' @param session Unique session ID.
+#'
+#' @returns Tibble slice with details associated to `symbol`.
+#' @keywords internal
+#'
+#' @noRd
 lookup_symbol <- function(symbol, registry, session = NULL) {
   out <- registry$symbols
 
@@ -49,13 +38,22 @@ lookup_symbol <- function(symbol, registry, session = NULL) {
     dplyr::slice(1)
 }
 
+#' Register `symbol` in `registry`
+#'
+#' @param registry Symbol registry object.
+#' @param symbol Symbol object.
+#'
+#' @returns Updated symbol registry.
+#' @keywords internal
+#'
+#' @noRd
 register_symbol <- function(registry, symbol) {
   # local bindings
   aux <- session <- NULL
   stopifnot(inherits(symbol, "safe_symbol"))
 
   # extract current version of symbol
-  if (nrow(registry$symbols) == 0 || length(registry$symbols) == 0) {
+  if (length(registry$symbols) == 0 || nrow(registry$symbols) == 0) {
     current_version <- 0
   } else {
     aux <- registry$symbols |>
@@ -86,6 +84,18 @@ register_symbol <- function(registry, symbol) {
   registry
 }
 
+#' Resolve symbol
+#'
+#' @param registry Symbol registry object.
+#' @param symbol Symbol object.
+#' @param timestamp Timestamp, when the symbol was created.
+#' @param session Unique session ID.
+#' @param user Username.
+#'
+#' @returns Tibble slice with details associated to `symbol`.
+#' @keywords internal
+#'
+#' @noRd
 resolve_symbol <- function(
   registry,
   symbol,
@@ -115,6 +125,12 @@ resolve_symbol <- function(
     dplyr::slice_max(created_at, n = 1)
 }
 
+#' Create new symbol registry
+#'
+#' @returns New `symbol_registry` object.
+#' @keywords internal
+#'
+#' @noRd
 symbol_registry <- function() {
   new_symbol_registry()
 }
