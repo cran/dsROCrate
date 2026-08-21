@@ -24,7 +24,10 @@ audit(x, ...)
   x,
   ...,
   intent = NULL,
+  profile = "default",
   project = NULL,
+  resources = NULL,
+  tables = NULL,
   user = NULL,
   logs_from = -Inf,
   logs_to = Inf,
@@ -48,8 +51,18 @@ Alternatively, a list of any of the above.}
 \item{intent}{Additional object with governance bundle/specification of the
 intent of a project. It takes the same types as \code{x}.}
 
-\item{project}{String with project name(s) from which to extra Safe Project
+\item{profile}{String with profile name (used for OBiBa's Opal backend).}
+
+\item{project}{String with project name(s) from which to extract Safe Project
 details.}
+
+\item{resources}{Vector of strings with the names of the resources, part of
+\code{project}. Optional, if not provided, all the resources associated to
+\code{project} will be included in the RO-Crate.}
+
+\item{tables}{Vector of strings with the names of the tables/datasets, part
+of \code{project}. Optional, if not provided, all the tables/datasets
+associated to \code{project} will be included in the RO-Crate.}
 
 \item{user}{String with the user name for which to extract Safe People
 details.}

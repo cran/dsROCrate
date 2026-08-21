@@ -1,3 +1,12 @@
+# dsROCrate 0.2.2
+
+## Bug fixes
+
+* Fixed an issue in `safe_output()` where Opal audit logs containing no `AGGREGATE` events could cause the audit pipeline to fail when constructing the calls table.
+* `safe_output()` now handles audit sessions with logs but no `AGGREGATE` calls gracefully, returning an empty calls table rather than attempting to operate on `NULL`.
+* Fixed an issue where an RO-Crate without an explicit Opal profile attribute could cause safe_output() to fail when filtering audit logs. The default "default" Opal profile is now used when no profile is supplied.
+* Improved robustness of provenance extraction for audit sessions with incomplete or limited audit activity.
+
 # dsROCrate 0.2.1
 
 ## Bug Fixes

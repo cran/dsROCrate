@@ -7,8 +7,15 @@
 #'     governance archive file, representing the intent of a project and
 #'     associated governance details.
 #' @param ... Other optional arguments, see full documentation for details.
-#' @param project String with project name(s) from which to extra Safe Project
+#' @param profile String with profile name (used for OBiBa's Opal backend).
+#' @param project String with project name(s) from which to extract Safe Project
 #'     details.
+#' @param resources Vector of strings with the names of the resources, part of
+#'     `project`. Optional, if not provided, all the resources associated to
+#'     `project` will be included in the RO-Crate.
+#' @param tables Vector of strings with the names of the tables/datasets, part
+#'     of `project`. Optional, if not provided, all the tables/datasets
+#'     associated to `project` will be included in the RO-Crate.
 #' @param user String with the user name for which to extract Safe People
 #'     details.
 #' @param logs_from Lower limit timestamp to filter out the outputs generated
@@ -61,7 +68,10 @@ audit_engine.cr8tor <- function(x, ...) {
 audit_engine.opal <- function(
   x,
   ...,
+  profile = "default",
   project = NULL,
+  resources = NULL,
+  tables = NULL,
   user = NULL,
   logs_from = -Inf,
   logs_to = Inf,
@@ -70,11 +80,16 @@ audit_engine.opal <- function(
   # local bindings
   name <- NULL
 
-  # create RO-Create with the 5 safes profile
-  crate <- rocrateR::rocrate_5s()
-
-  # validate backend
-  validate_backend(x, ...)
+  # initialise empty RO-Crate with audit settings
+  crate <- x |>
+    dsROCrate::init(
+      profile = profile,
+      project = project,
+      resources = resources,
+      tables = tables,
+      user = user,
+      path = path
+    )
 
   # if `project` is missing, then error
   if (is.null(project)) {
@@ -165,7 +180,7 @@ audit_engine.opal <- function(
     purrr::reduce(rocrateR::remove_entity, .init = crate)
 
   # Safe Settings ----
-  crate <- safe_setting(x, rocrate = crate)
+  crate <- safe_setting(crate, connection = x)
 
   # Safe Outputs ----
   crate <- safe_people_tbl$name |>

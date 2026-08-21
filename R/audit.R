@@ -29,8 +29,15 @@
 #' @param ... Additional arguments.
 #' @param intent Additional object with governance bundle/specification of the
 #'     intent of a project. It takes the same types as `x`.
-#' @param project String with project name(s) from which to extra Safe Project
+#' @param profile String with profile name (used for OBiBa's Opal backend).
+#' @param project String with project name(s) from which to extract Safe Project
 #'     details.
+#' @param resources Vector of strings with the names of the resources, part of
+#'     `project`. Optional, if not provided, all the resources associated to
+#'     `project` will be included in the RO-Crate.
+#' @param tables Vector of strings with the names of the tables/datasets, part
+#'     of `project`. Optional, if not provided, all the tables/datasets
+#'     associated to `project` will be included in the RO-Crate.
 #' @param user String with the user name for which to extract Safe People
 #'     details.
 #' @param logs_from Lower limit timestamp to filter out the outputs generated
@@ -142,7 +149,10 @@ audit.opal <- function(
   x,
   ...,
   intent = NULL,
+  profile = "default",
   project = NULL,
+  resources = NULL,
+  tables = NULL,
   user = NULL,
   logs_from = -Inf,
   logs_to = Inf,
@@ -154,7 +164,10 @@ audit.opal <- function(
   # call next method
   main_audit <- audit_engine(
     x,
+    profile = profile,
     project = c(intent_lst$main_audit_args$project, project),
+    resources = resources,
+    tables = tables,
     user = c(intent_lst$main_audit_args$user, user),
     logs_from = logs_from,
     logs_to = logs_to,

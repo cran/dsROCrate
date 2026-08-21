@@ -1,3 +1,53 @@
+#' Convert log calls into tibble
+#'
+#' @param calls List with log calls.
+#' @param registry Symbol registry.
+#'
+#' @returns Tibble with parsed log calls.
+#' @keywords internal
+#'
+#' @noRd
+calls_to_tbl <- function(calls, registry) {
+  if (length(calls) == 0L) {
+    return(
+      tibble::tibble(
+        timestamp = character(),
+        action = character(),
+        user = character(),
+        r_cmd = character(),
+        fx = character(),
+        args = list(),
+        symbol = character(),
+        table = character(),
+        session = character(),
+        profile = character()
+      )
+    )
+  }
+
+  purrr::map(calls, \(x) {
+    tibble::tibble(
+      timestamp = format(x$created_at, "%Y-%m-%dT%H:%M:%S"),
+      action = "AGGREGATE",
+      user = x$user,
+      r_cmd = x$original,
+      fx = paste0(x$package, x$namespace, x$fx),
+      args = list(x$args),
+      symbol = NA_character_,
+      table = x$args |>
+        purrr::map(function(x) {
+          if (!inherits(x, "safe_reference")) {
+            return(NA_character_)
+          }
+          resolve_symbol_asset(x$symbol_id, registry)
+        }),
+      session = x$session,
+      profile = x$profile
+    )
+  }) |>
+    purrr::list_rbind()
+}
+
 #' Extract Safe Output entity(ies)
 #'
 #' @inheritParams safe_data

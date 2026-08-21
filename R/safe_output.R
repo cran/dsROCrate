@@ -104,7 +104,11 @@ safe_output.opal <- function(
   `@timestamp` <- backend <- logger_name <- safe_people_id <- username <- NULL
   ds_action <- ds_eval <- ds_id <- ds_function <- ds_symbol <- ds_table <- NULL
   asset <- action <- is_placeholder <- kind <- symbol_id <- timestamp <- NULL
-  expr <- fx <- log_id <- r_cmd <- session <- symbol <- NULL
+  ds_profile <- expr <- fx <- log_id <- r_cmd <- session <- symbol <- NULL
+
+  if (is.null(profile)) {
+    profile <- "default"
+  }
 
   # create formatted versions of input dates
   logs_from_is_valid <- FALSE
@@ -217,12 +221,14 @@ safe_output.opal <- function(
   # parse logs
   userlogs_tbl <- backend_logs(x) |>
     tibble::as_tibble() |>
+    dplyr::bind_rows(tibble::tibble(ds_profile = "-999999")) |>
     dplyr::mutate(
       `@timestamp` = as.POSIXct(`@timestamp`, format = "%Y-%m-%dT%H:%M:%S")
     ) |>
     # filter logs
     dplyr::filter(`@timestamp` >= logs_from, `@timestamp` <= logs_to) |>
     dplyr::filter(logger_name == "datashield.user") |>
+    dplyr::filter(ds_profile == profile) |>
     dplyr::filter(username %in% user)
 
   userlogs <- NULL
@@ -350,27 +356,7 @@ safe_output.opal <- function(
     })
 
   # convert list of calls into tibble
-  calls_tbl <- purrr::map(calls_lst, \(x) {
-    tibble::tibble(
-      timestamp = format(x$created_at, '%Y-%m-%dT%H:%M:%S'),
-      action = "AGGREGATE",
-      user = x$user,
-      r_cmd = x$original,
-      fx = paste0(x$package, x$namespace, x$fx),
-      args = list(x$args),
-      symbol = NA,
-      table = x$args |>
-        purrr::map(function(x) {
-          if (!inherits(x, "safe_reference")) {
-            return(NA_character_)
-          }
-          resolve_symbol_asset(x$symbol_id, registry)
-        }),
-      session = x$session,
-      profile = x$profile
-    )
-  }) |>
-    purrr::list_c()
+  calls_tbl <- calls_to_tbl(calls_lst, registry)
 
   # combine function calls with symbol's registry
   calls_symbols_tbl <- calls_tbl |>

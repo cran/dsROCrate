@@ -9,8 +9,8 @@ backend_options.opal <- function(x, ...) {
 }
 
 #' @export
-backend_packages.opal <- function(x, ...) {
-  opalr::dsadmin.package_descriptions(x, ...)
+backend_packages.opal <- function(x, ..., profile = "default") {
+  opalr::dsadmin.package_descriptions(x, profile = profile, ...)
 }
 
 #' @export

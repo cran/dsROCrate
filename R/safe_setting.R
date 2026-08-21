@@ -200,7 +200,7 @@ safe_setting.opal <- function(
 
   # computational environment ----
   # extract information about R packages installed in the environment
-  pkg_tbl <- backend_packages(x) |>
+  pkg_tbl <- backend_packages(x, profile = profile) |>
     tibble::as_tibble()
   pkg_entities <- pkg_tbl |>
     purrr::pmap(function(Package, Version, Description, Author, ...) {
