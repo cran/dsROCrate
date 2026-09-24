@@ -105,6 +105,7 @@ safe_output.opal <- function(
   ds_action <- ds_eval <- ds_id <- ds_function <- ds_symbol <- ds_table <- NULL
   asset <- action <- is_placeholder <- kind <- symbol_id <- timestamp <- NULL
   ds_profile <- expr <- fx <- log_id <- r_cmd <- session <- symbol <- NULL
+  column <- created_at <- created_by <- id <- uuid <- NULL
 
   if (is.null(profile)) {
     profile <- "default"
@@ -221,7 +222,7 @@ safe_output.opal <- function(
   # parse logs
   userlogs_tbl <- backend_logs(x) |>
     tibble::as_tibble() |>
-    dplyr::bind_rows(tibble::tibble(ds_profile = "-999999")) |>
+    dplyr::bind_rows(tibble::tibble(ds_profile = character())) |>
     dplyr::mutate(
       `@timestamp` = as.POSIXct(`@timestamp`, format = "%Y-%m-%dT%H:%M:%S")
     ) |>
@@ -229,7 +230,8 @@ safe_output.opal <- function(
     dplyr::filter(`@timestamp` >= logs_from, `@timestamp` <= logs_to) |>
     dplyr::filter(logger_name == "datashield.user") |>
     dplyr::filter(ds_profile == profile) |>
-    dplyr::filter(username %in% user)
+    dplyr::filter(username %in% user) |>
+    dplyr::mutate(id = paste0("", dplyr::row_number()))
 
   userlogs <- NULL
   if (nrow(userlogs_tbl) > 0) {
@@ -287,59 +289,152 @@ safe_output.opal <- function(
   )
 
   # update symbol registry
+  ## check if Opal 6.0+ is available
+  opal_6_available <- tryCatch(
+    {
+      validate_backend_version(x, minimum = "6.0")
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+  ## extract 'RESOLVE' operations from the logs
+  userlogs_resolve_tbl <- NULL
+  if (opal_6_available) {
+    userlogs_resolve_tbl <- userlogs_tbl |>
+      dplyr::filter(ds_action %in% c("RESOLVE"))
+  }
   ## extract 'ASSIGN' operations from the logs
   userlogs_assign_tbl <- userlogs_tbl |>
     dplyr::filter(ds_action %in% c("ASSIGN"))
 
   ## reshape the logs into a tibble of `symbols`
-  symbols_tbl <- seq_len(nrow(userlogs_assign_tbl)) |>
-    purrr::map(function(i) {
-      # extract log components
-      ds_eval <- getElement(userlogs_assign_tbl[i, ], "ds_eval")
-      ds_resource <- getElement(userlogs_assign_tbl[i, ], "ds_resource")
-      ds_symbol <- getElement(userlogs_assign_tbl[i, ], "ds_symbol")
-      ds_table <- getElement(userlogs_assign_tbl[i, ], "ds_table")
+  symbols_tbl <- if (nrow(userlogs_assign_tbl) == 0) {
+    tibble::tibble(
+      id = character(),
+      symbol = character(),
+      kind = character(),
+      asset = character(),
+      expr = character(),
+      created_by = character(),
+      created_at = as.POSIXct(character()),
+      user = character(),
+      action = character(),
+      session = character()
+    )
+  } else {
+    seq_len(nrow(userlogs_assign_tbl)) |>
+      purrr::map(function(i) {
+        # extract log components
+        id <- getElement(userlogs_assign_tbl[i, ], "id")
+        ds_eval <- getElement(userlogs_assign_tbl[i, ], "ds_eval")
+        ds_resource <- getElement(userlogs_assign_tbl[i, ], "ds_resource")
+        ds_symbol <- getElement(userlogs_assign_tbl[i, ], "ds_symbol")
+        ds_table <- getElement(userlogs_assign_tbl[i, ], "ds_table")
 
-      # evaluate which fields are populated
-      is_expr <- !is.null(ds_eval) && !is.na(ds_eval)
-      is_resource <- !is.null(ds_resource) && !is.na(ds_resource)
-      is_table <- !is.null(ds_table) && !is.na(ds_table)
+        # evaluate which fields are populated
+        is_expr <- !is.null(ds_eval) && !is.na(ds_eval)
+        is_resource <- !is.null(ds_resource) && !is.na(ds_resource)
+        is_table <- !is.null(ds_table) && !is.na(ds_table)
 
-      tibble::tibble(
+        tibble::tibble(
+          id = id,
+          symbol = ds_symbol,
+          kind = ifelse(
+            is_expr,
+            'expression',
+            ifelse(
+              is_resource,
+              'resource',
+              ifelse(is_table, 'table', NA_character_)
+            )
+          ),
+          asset = ifelse(
+            is_resource,
+            ds_resource,
+            ifelse(is_table, ds_table, NA_character_)
+          ),
+          expr = ifelse(is_expr, ds_eval, NA_character_),
+          created_by = ifelse(
+            is_expr,
+            'DSI::datashield.assign.expr',
+            ifelse(
+              is_resource,
+              'DSI::datashield.assign.resource',
+              ifelse(is_table, 'DSI::datashield.assign.table', NA_character_)
+            )
+          ),
+          created_at = userlogs_assign_tbl$`@timestamp`[[i]],
+          user = userlogs_assign_tbl$username[[i]],
+          action = userlogs_assign_tbl$ds_action[[i]],
+          session = userlogs_assign_tbl$ds_id[[i]]
+        )
+      }) |>
+      dplyr::bind_rows() |>
+      dplyr::distinct()
+  }
+
+  ## reshape RESOLVE operations into log entries
+  resolve_tbl <- tibble::tibble(
+    id = character(),
+    timestamp = character(),
+    action = character(),
+    user = character(),
+    r_cmd = character(),
+    fx = character(),
+    symbol = character(),
+    column = character(),
+    kind = character(),
+    asset = character(),
+    expr = character(),
+    session = character(),
+    backend = character()
+  )
+
+  if (!is.null(userlogs_resolve_tbl) && nrow(userlogs_resolve_tbl) > 0) {
+    resolve_tbl <- userlogs_resolve_tbl |>
+      # insert column placeholders for ds_resource and ds_table
+      dplyr::bind_rows(tibble::tibble(
+        ds_resource = character(),
+        ds_table = character()
+      )) |>
+      dplyr::transmute(
+        id,
+        timestamp = format(`@timestamp`, "%Y-%m-%dT%H:%M:%S"),
+        action = ds_action,
+        user = username,
+        r_cmd = dplyr::case_when(
+          !is.na(ds_resource) ~ paste0(
+            "RESOLVE ",
+            ds_resource,
+            " -> ",
+            ds_symbol
+          ),
+          !is.na(ds_table) ~ paste0(
+            "RESOLVE ",
+            ds_table,
+            " -> ",
+            ds_symbol
+          ),
+          TRUE ~ NA_character_
+        ),
+        fx = NA_character_,
         symbol = ds_symbol,
-        kind = ifelse(
-          is_expr,
-          'expression',
-          ifelse(
-            is_resource,
-            'resource',
-            ifelse(is_table, 'table', NA_character_)
-          )
+        column = NA_character_,
+        kind = dplyr::case_when(
+          !is.na(ds_resource) ~ "resource",
+          !is.na(ds_table) ~ "table",
+          TRUE ~ NA_character_
         ),
-        asset = ifelse(
-          is_resource,
-          ds_resource,
-          ifelse(is_table, ds_table, NA_character_)
+        asset = dplyr::case_when(
+          !is.na(ds_resource) ~ ds_resource,
+          !is.na(ds_table) ~ ds_table,
+          TRUE ~ NA_character_
         ),
-        expr = ifelse(is_expr, ds_eval, NA_character_),
-        # expr = if (is_expr) str2lang(ds_eval) else NULL,
-        created_by = ifelse(
-          is_expr,
-          'DSI::datashield.assign.expr',
-          ifelse(
-            is_resource,
-            'DSI::datashield.assign.resource',
-            ifelse(is_table, 'DSI::datashield.assign.table', NA_character_)
-          )
-        ),
-        created_at = userlogs_assign_tbl$`@timestamp`[[i]],
-        user = userlogs_assign_tbl$username[[i]],
-        action = userlogs_assign_tbl$ds_action[[i]],
-        session = userlogs_assign_tbl$ds_id[[i]]
+        expr = NA_character_,
+        session = ds_id,
+        backend = "OBiBa's Opal"
       )
-    }) |>
-    purrr::list_c() |>
-    dplyr::distinct()
+  }
 
   ## add symbols to registry
   registry <- symbols_tbl |>
@@ -355,77 +450,97 @@ safe_output.opal <- function(
         enrich_call(registry = registry)
     })
 
-  # convert list of calls into tibble
-  calls_tbl <- calls_to_tbl(calls_lst, registry)
-
-  # combine function calls with symbol's registry
-  calls_symbols_tbl <- calls_tbl |>
-    dplyr::select(-symbol) |>
-    dplyr::mutate(
-      args = purrr::map(
-        args,
-        ~ purrr::imap_dfr(.x, function(arg, nm) {
-          if (!inherits(arg, "safe_reference")) {
-            tibble::tibble(
-              argument = nm,
-              value = list(arg),
-              symbol_id = NA_character_,
-              symbol = NA_character_,
-              column = NA_character_
-            )
-          } else {
-            tibble::tibble(
-              argument = nm,
-              value = list(arg),
-              symbol_id = arg$symbol_id,
-              symbol = arg$symbol,
-              column = arg$column
-            )
-          }
-        })
-      )
-    ) |>
-    (\(x) {
-      purrr::map2(
-        split(x |> dplyr::select(-args), seq_len(nrow(x))),
-        x$args,
-        dplyr::bind_cols
-      )
-    })() |>
-    purrr::list_c() |>
-    dplyr::left_join(
-      registry$symbols,
-      by = c("symbol_id" = "id"),
-      suffix = c("", "_registry")
-    ) |>
-    dplyr::mutate(
-      asset = dplyr::if_else(
-        kind == "expression",
-        purrr::map_chr(
-          symbol_id,
-          resolve_symbol_asset,
-          registry = registry
-        ),
-        asset
-      )
-    ) |>
-    # add column with backend
-    dplyr::mutate(backend = "OBiBa's Opal") |>
-    # subset columns
-    dplyr::select(
-      timestamp,
-      action,
-      user,
-      r_cmd,
-      fx,
-      symbol,
-      kind,
-      asset,
-      expr,
-      # table = ds_table,
-      session,
-      backend
+  if (length(calls_lst) == 0) {
+    calls_symbols_tbl <- tibble::tibble(
+      id = character(),
+      timestamp = character(),
+      action = character(),
+      user = character(),
+      r_cmd = character(),
+      fx = character(),
+      symbol = character(),
+      column = character(),
+      kind = character(),
+      asset = character(),
+      expr = character(),
+      session = character(),
+      backend = character()
     )
+  } else {
+    # convert list of calls into tibble
+    calls_tbl <- calls_to_tbl(calls_lst, registry)
+
+    # combine function calls with symbol's registry
+    calls_symbols_tbl <- calls_tbl |>
+      dplyr::select(-symbol) |>
+      dplyr::mutate(
+        args = purrr::map(
+          args,
+          ~ purrr::imap_dfr(.x, function(arg, nm) {
+            if (!inherits(arg, "safe_reference")) {
+              tibble::tibble(
+                argument = nm,
+                value = list(arg),
+                symbol_id = NA_character_,
+                symbol = NA_character_,
+                column = NA_character_
+              )
+            } else {
+              tibble::tibble(
+                argument = nm,
+                value = list(arg),
+                symbol_id = arg$symbol_id,
+                symbol = arg$symbol,
+                column = arg$column
+              )
+            }
+          })
+        )
+      ) |>
+      (\(x) {
+        purrr::map2(
+          split(x |> dplyr::select(-args), seq_len(nrow(x))),
+          x$args,
+          dplyr::bind_cols
+        )
+      })() |>
+      purrr::list_c() |>
+      dplyr::left_join(
+        registry$symbols,
+        by = c("symbol_id" = "id"),
+        suffix = c("", "_registry")
+      ) |>
+      dplyr::mutate(
+        asset = dplyr::if_else(
+          kind == "expression",
+          purrr::map_chr(
+            symbol_id,
+            resolve_symbol_asset,
+            registry = registry
+          ),
+          asset
+        )
+      ) |>
+      # add column with backend
+      dplyr::mutate(backend = "OBiBa's Opal") |>
+      # subset columns
+      dplyr::select(
+        id,
+        timestamp,
+        action,
+        user,
+        r_cmd,
+        fx,
+        symbol,
+        column,
+        kind,
+        asset,
+        expr,
+        # table = ds_table,
+        session,
+        backend
+      )
+  }
 
   # extract session details
   session_tbl <- userlogs_tbl |>
@@ -440,6 +555,7 @@ safe_output.opal <- function(
       backend = "OBiBa's Opal"
     ) |>
     dplyr::select(
+      id,
       timestamp,
       action = ds_action,
       user = username,
@@ -449,13 +565,51 @@ safe_output.opal <- function(
       backend
     )
 
+  # parse symbols to log entries
+  assign_tbl <- symbols_tbl |>
+    dplyr::transmute(
+      id,
+      timestamp = format(created_at, "%Y-%m-%dT%H:%M:%S"),
+      action = action,
+      user,
+      r_cmd = dplyr::case_when(
+        kind == "table" ~ paste0(symbol, " <- opal[", asset, "]"),
+        kind == "resource" ~ paste0(symbol, " <- opal[", asset, "]"),
+        kind == "expression" ~ expr,
+        TRUE ~ NA_character_
+      ),
+      fx = created_by,
+      symbol,
+      column = NA_character_,
+      kind,
+      asset,
+      expr,
+      session,
+      backend = "OBiBa's Opal"
+    )
+
   # combine the logs
-  userlogs_tbl_maps_evals <- calls_symbols_tbl |>
+  userlogs_tbl_maps_evals <- dplyr::bind_rows(
+    resolve_tbl,
+    assign_tbl,
+    calls_symbols_tbl,
+    session_tbl
+  ) |>
     dplyr::distinct() |>
-    dplyr::mutate(log_id = dplyr::row_number()) |>
-    dplyr::bind_rows(session_tbl) |>
-    dplyr::arrange(timestamp, log_id) |>
-    dplyr::select(-log_id)
+    dplyr::arrange(as.numeric(id), timestamp) |>
+    # regenerate unique operation IDs
+    (\(.) {
+      dplyr::left_join(
+        .,
+        tibble::tibble(
+          id = unique(.$id),
+          uuid = uuid::UUIDgenerate(n = length(id))
+        ),
+        by = "id"
+      )
+    })() |>
+    dplyr::mutate(id = uuid) |>
+    dplyr::select(-uuid)
 
   log_maps_filename <- paste0(
     format(Sys.time(), "%Y%m%dT%H%M%S"),

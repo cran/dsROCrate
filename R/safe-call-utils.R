@@ -5,7 +5,8 @@
 #' @param timestamp Timestamp to map the symbol details.
 #' @param session String with session ID.
 #'
-#' @returns `safe_reference` object.
+#' @returns `safe_reference` object, or the original argument when no
+#'   registered symbol can be resolved.
 #' @keywords internal
 #'
 #' @noRd
@@ -14,9 +15,38 @@ enrich_argument <- function(arg, registry, timestamp, session) {
     return(arg)
   }
 
+  # attempt solving the argument as a direct symbol reference
   symbol <- resolve_symbol(
     registry,
     symbol = arg,
+    timestamp = timestamp,
+    session = session
+  )
+
+  if (!is.null(symbol)) {
+    return(safe_reference(symbol = symbol$symbol, symbol_id = symbol$id))
+  }
+
+  # if the argument isn't itself a symbol, try interpreting it as an R expr.
+  refs <- tryCatch(
+    find_symbols(arg),
+    error = function(e) NULL
+  )
+
+  if (is.null(refs) || !length(refs)) {
+    return(arg)
+  }
+
+  # if multiple symbols are found, return original obkect
+  if (length(refs) != 1L) {
+    return(arg)
+  }
+
+  ref <- refs[[1]]
+
+  symbol <- resolve_symbol(
+    registry,
+    symbol = ref$symbol,
     timestamp = timestamp,
     session = session
   )
@@ -27,7 +57,8 @@ enrich_argument <- function(arg, registry, timestamp, session) {
 
   safe_reference(
     symbol = symbol$symbol,
-    symbol_id = symbol$id
+    symbol_id = symbol$id,
+    column = ref$column
   )
 }
 

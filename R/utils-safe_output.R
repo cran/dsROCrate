@@ -11,6 +11,7 @@ calls_to_tbl <- function(calls, registry) {
   if (length(calls) == 0L) {
     return(
       tibble::tibble(
+        id = character(),
         timestamp = character(),
         action = character(),
         user = character(),
@@ -27,6 +28,7 @@ calls_to_tbl <- function(calls, registry) {
 
   purrr::map(calls, \(x) {
     tibble::tibble(
+      id = x$id,
       timestamp = format(x$created_at, "%Y-%m-%dT%H:%M:%S"),
       action = "AGGREGATE",
       user = x$user,

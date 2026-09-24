@@ -200,3 +200,132 @@ test_that("safe_output works", {
   # close connection to OBiBa's Opal demo server
   opalr::opal.logout(opal_con)
 })
+
+test_that("safe_output captures RESOLVE and ASSIGN operations independently", {
+  local_mocked_bindings(
+    validate_backend = function(x, ...) invisible(TRUE),
+    validate_backend_version = function(x, ..., minimum = "5.7.2") {
+      invisible(TRUE)
+    },
+    backend_logs = function(x, ...) {
+      tibble::tibble(
+        `@timestamp` = as.POSIXct(
+          c(
+            "2026-09-24 10:00:00",
+            "2026-09-24 10:00:01",
+            "2026-09-24 10:00:02"
+          ),
+          tz = "UTC"
+        ),
+        logger_name = "datashield.user",
+        level = "INFO",
+        message = c(
+          "Session opened",
+          "Resolved CNSIM.CNSIM1 to D",
+          "Assigned D from CNSIM.CNSIM1"
+        ),
+        ds_action = c("OPEN", "RESOLVE", "ASSIGN"),
+        ds_id = "session-1",
+        ds_profile = "default",
+        username = "test_user",
+        ds_symbol = c(NA_character_, "D", "D"),
+        ds_table = c(NA_character_, "CNSIM.CNSIM1", "CNSIM.CNSIM1"),
+        ds_resource = rep(NA_character_, 3),
+        ds_eval = rep(NA_character_, 3)
+      )
+    },
+    .package = "dsROCrate"
+  )
+
+  out <- suppressWarnings(
+    safe_output(
+      fake_opal_con(),
+      user = "test_user",
+      rocrate = rocrateR::rocrate_5s()
+    )
+  )
+
+  files <- .get_entity(out, type = "File")
+  mapping <- purrr::keep(files, \(x) grepl("_mappings\\.csv$", x$`@id`))[[1]]
+  mappings <- mapping$content[[1]]
+
+  expect_equal(mappings$action, c("OPEN", "RESOLVE", "ASSIGN"))
+
+  expect_equal(
+    mappings |>
+      dplyr::filter(action == "RESOLVE") |>
+      dplyr::select(symbol, kind, asset),
+    tibble::tibble(
+      symbol = "D",
+      kind = "table",
+      asset = "CNSIM.CNSIM1"
+    )
+  )
+
+  expect_equal(
+    mappings |>
+      dplyr::filter(action == "ASSIGN") |>
+      dplyr::select(symbol, kind, asset),
+    tibble::tibble(
+      symbol = "D",
+      kind = "table",
+      asset = "CNSIM.CNSIM1"
+    )
+  )
+})
+
+test_that("safe_output retains RESOLVE operations without ASSIGN", {
+  local_mocked_bindings(
+    validate_backend = function(x, ...) invisible(TRUE),
+    validate_backend_version = function(x, ..., minimum = "5.7.2") {
+      invisible(TRUE)
+    },
+    backend_logs = function(x, ...) {
+      tibble::tibble(
+        `@timestamp` = as.POSIXct(
+          c(
+            "2026-09-24 10:00:00",
+            "2026-09-24 10:00:01"
+          ),
+          tz = "UTC"
+        ),
+        logger_name = "datashield.user",
+        level = "INFO",
+        message = c(
+          "Session opened",
+          "Unable to resolve CNSIM.MISSING to D"
+        ),
+        ds_action = c("OPEN", "RESOLVE"),
+        ds_id = "session-1",
+        ds_profile = "default",
+        username = "test_user",
+        ds_symbol = c(NA_character_, "D"),
+        ds_table = c(NA_character_, "CNSIM.MISSING"),
+        ds_resource = rep(NA_character_, 2),
+        ds_eval = rep(NA_character_, 2)
+      )
+    },
+    .package = "dsROCrate"
+  )
+
+  out <- suppressWarnings(
+    safe_output(
+      fake_opal_con(),
+      user = "test_user",
+      rocrate = rocrateR::rocrate_5s()
+    )
+  )
+
+  files <- .get_entity(out, type = "File")
+  mapping <- purrr::keep(files, \(x) grepl("_mappings\\.csv$", x$`@id`))[[1]]
+  mappings <- mapping$content[[1]]
+
+  resolve <- mappings |>
+    dplyr::filter(action == "RESOLVE")
+
+  expect_equal(nrow(resolve), 1)
+  expect_equal(resolve$symbol, "D")
+  expect_equal(resolve$asset, "CNSIM.MISSING")
+  expect_equal(resolve$kind, "table")
+  expect_false("ASSIGN" %in% mappings$action)
+})

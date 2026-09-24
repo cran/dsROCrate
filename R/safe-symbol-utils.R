@@ -70,7 +70,7 @@ resolve_dependencies <- function(expr, registry) {
   # find symbols for the given expression
   refs <- find_symbols(expr)
 
-  if (is.null(refs)) {
+  if (is.null(refs) || !length(registry$symbols)) {
     return(tibble::tibble())
   }
 
@@ -102,7 +102,7 @@ resolve_provenance <- function(symbol_id, registry, visited = character()) {
   # local bindings
   id <- NULL
 
-  if (symbol_id %in% visited) {
+  if (symbol_id %in% visited || is.na(symbol_id)) {
     return(tibble::tibble())
   }
 

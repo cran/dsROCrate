@@ -48,7 +48,7 @@ new_safe_symbol <- function(
   session = NA_character_,
   action = NA_character_,
   metadata = list(),
-  id = paste0("symbol-", uuid::UUIDgenerate())
+  id = uuid::UUIDgenerate()
 ) {
   stopifnot(is.character(symbol))
   stopifnot(length(symbol) == 1)

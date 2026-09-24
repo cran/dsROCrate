@@ -1,6 +1,7 @@
 #' @export
 as.data.frame.safe_call <- function(x, ...) {
   data.frame(
+    id = x$id,
     timestamp = format(x$created_at, '%Y-%m-%dT%H:%M:%S'),
     user = x$user,
     r_cmd = x$original,
@@ -19,6 +20,7 @@ as.data.frame.safe_call <- function(x, ...) {
 #' @param namespace Function's namespace.
 #' @param fx Function's name.
 #' @param args List with arguments.
+#' @param id Unique call ID.
 #' @param ... Additional arguments.
 #'
 #' @returns New `safe_call` object.
@@ -31,6 +33,7 @@ new_safe_call <- function(
   namespace,
   fx,
   args,
+  id = uuid::UUIDgenerate(),
   ...
 ) {
   stopifnot(is.character(original))
@@ -39,6 +42,7 @@ new_safe_call <- function(
 
   structure(
     list(
+      id = id,
       original = original,
       package = package,
       namespace = namespace,

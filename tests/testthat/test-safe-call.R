@@ -29,7 +29,7 @@ test_that("as.data.frame.safe_call returns the expected columns", {
   expect_equal(nrow(res), 1)
   expect_setequal(
     names(res),
-    c("timestamp", "user", "r_cmd", "fx", "args", "session", "profile")
+    c("id", "timestamp", "user", "r_cmd", "fx", "args", "session", "profile")
   )
   expect_equal(res$user, "alice")
   expect_equal(res$session, "session-1")

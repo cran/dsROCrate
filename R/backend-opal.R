@@ -110,7 +110,7 @@ is_audit_con.opal <- function(x, ...) {
 
 #' @export
 validate_backend_version.opal <- function(x, ..., minimum = "5.7.2") {
-  if (utils::compareVersion(x$version, minimum) < 0) {
+  if (suppressWarnings(utils::compareVersion(x$version, minimum)) < 0) {
     stop(
       sprintf(
         "Opal >= %s is required, but server version is %s.",
