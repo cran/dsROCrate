@@ -2,7 +2,7 @@
 as.data.frame.safe_call <- function(x, ...) {
   data.frame(
     id = x$id,
-    timestamp = format(x$created_at, '%Y-%m-%dT%H:%M:%S'),
+    timestamp = format_utc(x$created_at),
     user = x$user,
     r_cmd = x$original,
     fx = paste0(x$package, x$namespace, x$fx),

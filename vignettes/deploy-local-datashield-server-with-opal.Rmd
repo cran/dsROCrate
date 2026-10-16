@@ -8,119 +8,150 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
+# nothing in this vignette is run: it needs Docker and a local server
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  cache = FALSE
+  cache = FALSE,
+  eval = FALSE
 )
 ```
 
+This tutorial starts a local [DataSHIELD](https://datashield.org) server with
+[Docker](https://www.docker.com), so you can try `{dsROCrate}` (or anything else
+that talks to DataSHIELD) without touching a production system. It uses
+[Opal](https://www.obiba.org/pages/products/opal/), the data repository
+developed by [OBiBa](https://www.obiba.org/) and the reference implementation
+of the DataSHIELD infrastructure.
 
-```{r}
-#| echo: false
-#| label: setup
-library(dsROCrate)
-```
+**Local testing only:** the accounts and passwords below are public defaults.
+Never expose this deployment to a network, and change them if you reuse it for
+anything else.
 
-### What is Opal?
+## 1. Start the containers
 
-> Opal is [OBiBa](https://www.obiba.org/)’s core database application for epidemiological studies. Participant data, collected by questionnaires, medical instruments, sensors, administrative databases etc. can be integrated and stored in a central data repository under a uniform model. Opal is a web application that can import, process, copy data and has advanced features for cataloguing the data (fully described, annotated and searchable data dictionaries) as recommended by the [Maelstrom Research](https://www.maelstrom-research.org/) group at McGill University, Canada. Opal is typically used by a research centre to analyse the data acquired from assessment centres. Its ultimate purpose is to achieve seamless data-sharing among epidemiological studies. Opal is the reference implementation of the [DataSHIELD](https://datashield.org/) infrastructure. More information on Opal can be found in the [Opal description on OBiBa](https://www.obiba.org/pages/products/opal/).
+We assume Docker is installed and configured on your computer; if not, see
+[Get started with Docker](https://www.docker.com/get-started/).
 
-**Source:** [https://isglobal-brge.github.io/resource_bookdown/opal.html](https://isglobal-brge.github.io/resource_bookdown/opal.html)
-
-### Deploy Docker containers
-Here we will spawn a local instance of [DataSHIELD](https://datashield.org) with 
-[Docker](https://www.docker.com). We will assume you have installed and
-configured Docker on your computer; however, if that's not the case, visit their
-[get started with Docker](https://www.docker.com/get-started/) page.
-
-#### Setup
-The easiest way to deploy DataSHIELD with docker is by cloning the following
-repo: [FederatedMethods/datashield_dev_install](https://github.com/FederatedMethods/datashield_dev_install).
-Here, you will find a step by step guide, including a very useful
-[`docker-compose.yml`](https://github.com/FederatedMethods/datashield_dev_install/blob/main/docker/docker-compose.yml) 
-file, which you can use out of the box.
-
-If you are running Linux or macOS, you can run the following commands:
+The easiest option is to clone
+[FederatedMethods/datashield_dev_install](https://github.com/FederatedMethods/datashield_dev_install),
+which has a step by step guide and a ready to use
+[`docker-compose.yml`](https://github.com/FederatedMethods/datashield_dev_install/blob/main/docker/docker-compose.yml).
+On Linux or macOS:
 
 ```sh
 git clone https://github.com/FederatedMethods/datashield_dev_install
-cd datashield_pcr/docker
+cd datashield_dev_install/docker
 docker compose up -d
 ```
 
-Then you can inspect the Docker GUI, where you should see something like the
-following:
+In the Docker GUI you should see something like the following:
 
-<img src="../man/figures/ds_docker_compose.png" alt="Docker conf" height=200px/>
+<img src="../man/figures/ds_docker_compose.png" alt="Docker containers started by docker-compose" height=200px/>
 
+## 2. The accounts
 
----------
+The `docker-compose.yml` file defines two accounts (you can change them by
+editing the variables `OPAL_DEMO_USER_NAME` and `OPAL_DEMO_USER_PASSWORD`):
 
-#### Open connection
+| Account         | Password   | Used for                                              |
+|-----------------|------------|-------------------------------------------------------|
+| `administrator` | `password` | Logging in to the Opal web interface; auditing with `{dsROCrate}` |
+| `dsuser`        | `P@ssw0rd` | Running DataSHIELD analyses (the user whose activity is audited) |
 
-By default, the [`docker-compose.yml`](https://github.com/FederatedMethods/datashield_dev_install/blob/main/docker/docker-compose.yml) 
-file in the repo above defines a demo user, `demo_user`, with the following 
-password: `Demo_password1!` (edit the variables `OPAL_DEMO_USER_NAME` and
-`OPAL_DEMO_USER_PASSWORD` accordingly). Here, we will open a connection to our
-local server using these credentials:
+## 3. Test the deployment
 
-```{r}
-# define global variables
-USERNAME <- "demo_user"
-USERPASS <- "Demo_password1!"
-PROJECT <- "DEMO"
-TABLES <- c("CNSIM1")
-SERVER <- "https://opal-demo.obiba.org"
-PROFILE <- "demo"
+1. In a web browser, go to `http://localhost:8880` <!-- @URLok -->
+   and log in as `administrator`.
+
+2. In RStudio (or your preferred IDE), connect to the server from R:
+
+   ```r
+   con <- opalr::opal.login(
+     username = "administrator",
+     password = "password",
+     url = "http://localhost:8880"
+   )
+   print(con)
+   ```
+
+   You should see something like:
+
+   ```bash
+   url: http://localhost:8880
+   name: localhost
+   version: X.Y.Z
+   username: administrator
+   ```
+
+   `{dsROCrate}` requires Opal 5.7.2 or later (6.0 or later to capture
+   `RESOLVE` operations in the outputs). If the version shown is older, update
+   the Opal image in `docker-compose.yml`.
+
+   The containers also expose HTTPS on port 8843. That endpoint usually uses a
+   self-signed certificate, which R clients may reject unless certificate
+   verification is relaxed, so we use plain HTTP on port 8880 for local testing.
+
+3. (Optional) Run some commands as `dsuser` with `{dsBaseClient}`. This also
+   creates activity in the server logs, which the audit in the next section
+   will find:
+
+   ```r
+   # registers the OpalDriver class in the current session
+   DSOpal::Opal()
+
+   # create the login object
+   builder <- DSI::newDSLoginBuilder()
+   builder$append(
+     server = "study1",
+     url = "http://localhost:8880",
+     user = "dsuser",
+     password = "P@ssw0rd",
+     driver = "OpalDriver"
+   )
+   conns <- DSI::datashield.login(logins = builder$build())
+
+   # assign a table to the symbol `test`
+   DSI::datashield.assign.table(
+     conns["study1"],
+     symbol = "test",
+     table = "CNSIM.CNSIM1",
+     errors.print = TRUE
+   )
+
+   dsBaseClient::ds.ls(datasources = conns["study1"])
+   dsBaseClient::ds.summary("test", datasources = conns["study1"])
+
+   DSI::datashield.logout(conns)
+   ```
+
+## 4. Audit your local server
+
+With the connection `con` from step 3.2:
+
+```r
+dsROCrate::check_permissions(con, verbose = TRUE)
+
+crate <- dsROCrate::audit(
+  con,
+  project = "CNSIM",
+  tables = "CNSIM1",
+  user = "dsuser"
+)
+
+dsROCrate::report(crate, title = "Local DataSHIELD audit")
+
+opalr::opal.logout(con)
 ```
 
---------
+See `vignette("getting-started", package = "dsROCrate")` for what these
+functions do, and `vignette("audit-permissions", package = "dsROCrate")` to
+create a dedicated auditor account instead of using `administrator`.
 
-#### Test deployment
+## 5. Stop the server
 
-1. On a web browser, navigate to `http://localhost:8880` <!-- @URLok --> 
-and use the credentials on the `docker-compose.yml` to log in (e.g., `administrator` and `password`).
-       
-2. Inside RStudio (or your preferred IDE), you can test the connection to the local server with the following command (note that you might need to update the `username` and `password`): 
- 
-     ```r
-     opalr::opal.login( 
-         username = "administrator", 
-         password = "password", 
-         url = "https://localhost:8843/" 
-     )
-     ```
+From the same `docker` directory:
 
-     You should see something like the following:
-     ```bash
-     url: https://localhost:8843  
-     name: localhost  
-     version: 5.2.0  
-     username: administrator 
-     ```
-
-3. (Optional) Next, you can attempt running some commands with `{dsBaseClient}`:
- 
-    ```r
-     # for setup only 
-     DSOpal::Opal() 
-     # create new login object 
-     builder <- DSI::newDSLoginBuilder() 
-     builder$append(server = "study1", 
-                    url = "https://localhost:8843/", 
-                    user = "administrator", 
-                    password = "password", 
-                    driver = "OpalDriver") 
-     logindata <- builder$build() 
-     conns <- DSI::datashield.login(logins = logindata) 
-      
-     # assign table to symbol, `test` 
-     DSI::datashield.assign.table(conns["study1"],  
-                                  symbol = "test", 
-                                  table = "DEMO.CNSIM1", 
-                                  errors.print = TRUE) 
-      
-     dsBaseClient::ds.ls(datasources = conns["study1"]) 
-     dsBaseClient::ds.summary("test")
-    ```
+```sh
+docker compose down
+```

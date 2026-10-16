@@ -122,7 +122,7 @@ resolve_symbol <- function(
   }
 
   x |>
-    dplyr::slice_max(created_at, n = 1)
+    dplyr::slice_max(created_at, n = 1, with_ties = FALSE)
 }
 
 #' Create new symbol registry

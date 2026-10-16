@@ -1,7 +1,6 @@
 #' Extract Safe Setting entity(ies)
 #'
 #' @inheritParams safe_data
-#' @param ... Other optional arguments. See the full documentation
 #' @param rocrate (Optional) RO-Crate object to update with Safe Setting details.
 #' @param id (Optional) Vector with `@id` strings for Safe Setting entity(ies).
 #'

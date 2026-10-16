@@ -220,7 +220,6 @@ test_that("report.list aggregates multiple servers", {
     code = {
       result <- report(
         list(server1 = fake_rocrate, server2 = fake_rocrate),
-        study_name = "StudyX",
         render = FALSE,
         filepath = tempfile(fileext = ".md")
       )
@@ -383,7 +382,6 @@ test_that("report.list aggregates outputs from a study audit", {
     result <- report(
       roc,
       filepath = out_file,
-      study_name = "StudyX",
       render = FALSE,
       overwrite = TRUE
     )
@@ -409,7 +407,6 @@ test_that("report.list handles missing outputs from a study audit", {
     code = {
       result <- report(
         list(server1 = rocrateR::rocrate_5s()),
-        study_name = "StudyX",
         render = FALSE,
         filepath = out_file
       )

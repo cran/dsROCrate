@@ -241,7 +241,9 @@ test_that("safe_output captures RESOLVE and ASSIGN operations independently", {
     safe_output(
       fake_opal_con(),
       user = "test_user",
-      rocrate = rocrateR::rocrate_5s()
+      rocrate = rocrateR::rocrate_5s(),
+      logs_from = as.POSIXct("2026-09-24 09:59:00", tz = "UTC"),
+      logs_to = as.POSIXct("2026-09-24 10:01:00", tz = "UTC")
     )
   )
 
@@ -312,7 +314,9 @@ test_that("safe_output retains RESOLVE operations without ASSIGN", {
     safe_output(
       fake_opal_con(),
       user = "test_user",
-      rocrate = rocrateR::rocrate_5s()
+      rocrate = rocrateR::rocrate_5s(),
+      logs_from = as.POSIXct("2026-09-24 09:59:00", tz = "UTC"),
+      logs_to = as.POSIXct("2026-09-24 10:01:00", tz = "UTC")
     )
   )
 

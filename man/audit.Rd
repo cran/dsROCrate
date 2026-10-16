@@ -41,8 +41,8 @@ audit(x, ...)
 \itemize{
 \item a \emph{connection} to a DataSHIELD server (e.g., OBiBa's Opal).
 \item a \emph{path} pointing to an RO-Crate OR a \code{cr8tor} archive /
-.        governance bundle.
-\item an \emph{RO-Crate} object.
+governance bundle.
+\item an \emph{RO-Crate} object. If so, returns the input object.
 }
 Alternatively, a list of any of the above.}
 
@@ -51,7 +51,7 @@ Alternatively, a list of any of the above.}
 \item{intent}{Additional object with governance bundle/specification of the
 intent of a project. It takes the same types as \code{x}.}
 
-\item{profile}{String with profile name (used for OBiBa's Opal backend).}
+\item{profile}{String with profile name.}
 
 \item{project}{String with project name(s) from which to extract Safe Project
 details.}
@@ -81,7 +81,8 @@ the RO-Crate returned by this function.}
 RO-Crate with audit details.
 }
 \description{
-Create an audit RO-Crate following the 5 Safes Principles.
+Create an audit RO-Crate from a server connection. If given an RO-Crate,
+it is returned unchanged.
 }
 \details{
 This function handles various audit types, which will be dispatched based on
@@ -89,7 +90,7 @@ the input object. If the input object is
 
 \itemize{
 \item a \emph{connection} to a DataSHIELD server (e.g., OBiBa's Opal):
-.    generates an RO-Crate object with deployment details, including outputs.
+generates an RO-Crate object with deployment details, including outputs.
 \item a \emph{path} pointing to
 \itemize{
 \item \strong{a \code{cr8tor} archive / governance bundle}: generates an

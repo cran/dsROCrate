@@ -8,10 +8,8 @@
 #' The access service provider may require the researcher to sign a statement
 #' that they know and understand the regulations of the TRE.
 #'
-#' @param ... Other optional arguments. See the full documentation,
-#'     [`?dsROCrate::safe_people`][safe_people()].
-#' @param user_id_suffix String with ID suffix for the tables/datasets
-#'     entities in the RO-Crate (default: `"#dataset:"`).
+#' @param user_id_suffix String with ID suffix for the people/user
+#'     entities in the RO-Crate (default: `"#person:"`).
 #' @param set_author Boolean flag to indicate if the current user should be
 #'     set as the author of the RO-Crate.
 #' @param set_project Boolean flag to indicate if any `Project` entities found

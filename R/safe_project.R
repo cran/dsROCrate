@@ -10,8 +10,6 @@
 #' whether they are comfortable preparing data for the researcher to use for
 #' ethical purposes serving a public good.
 #'
-#' @param ... Other optional arguments. See the full documentation,
-#'     [`?dsROCrate::safe_project`][safe_project()].
 #' @inheritParams safe_data
 #'
 #' @returns Updated RO-Crate object with Safe Project information.
@@ -155,6 +153,8 @@ safe_project.opal <- function(
     rocrateR::add_entity(project_entity, overwrite = TRUE)
 
   # Opal permissions ----
+  # TODO(#42): derive project membership with `backend_project_members()` and
+  # share it (and the assets) across the safe_*() functions.
   perms <- backend_project_perms(x, project)
 
   project_users <- perms |>
@@ -167,9 +167,7 @@ safe_project.opal <- function(
 
   if (!is.null(people)) {
     for (p in people) {
-      user <- p$name
-
-      if (user %in% project_users) {
+      if (!is.null(p$name) && (p$name %in% project_users)) {
         rocrate <- append_entity_ref(
           rocrate,
           id = p[["@id"]],

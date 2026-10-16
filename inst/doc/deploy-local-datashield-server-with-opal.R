@@ -1,19 +1,9 @@
 ## ----include = FALSE----------------------------------------------------------
+# nothing in this vignette is run: it needs Docker and a local server
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  cache = FALSE
+  cache = FALSE,
+  eval = FALSE
 )
-
-## -----------------------------------------------------------------------------
-library(dsROCrate)
-
-## -----------------------------------------------------------------------------
-# define global variables
-USERNAME <- "demo_user"
-USERPASS <- "Demo_password1!"
-PROJECT <- "DEMO"
-TABLES <- c("CNSIM1")
-SERVER <- "https://opal-demo.obiba.org"
-PROFILE <- "demo"
 

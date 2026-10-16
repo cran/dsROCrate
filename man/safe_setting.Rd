@@ -63,8 +63,8 @@ the \code{opal} or \code{ArmadilloCredentials} classes), an RO-Crate
 (\link[rocrateR:rocrate]{rocrate} class) or a string with the path to an
 RO-Crate.}
 
-\item{...}{Other optional arguments. See the full documentation,
-\code{\link[=safe_setting]{?dsROCrate::safe_setting}}.}
+\item{...}{Further arguments passed on to the methods, which are documented
+as separate arguments below.}
 
 \item{connection}{Connection object for the 'DataSHIELD' server where the
 values will be extracted from (e.g., OBiBa's Opal). Optional, if \code{x} is
@@ -74,7 +74,7 @@ set to a connection object. If so, then \code{rocrate} is required.}
 be used to store log files. If not provided, logs will be stored within
 the RO-Crate returned by this function.}
 
-\item{profile}{String with profile name (used for OBiBa's Opal backend).}
+\item{profile}{String with profile name.}
 
 \item{project}{String with the name of the \link[=safe_project]{Safe Project}.}
 

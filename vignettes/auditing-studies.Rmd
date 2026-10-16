@@ -1,0 +1,117 @@
+---
+title: "Auditing Studies Across Several Servers"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Auditing Studies Across Several Servers}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  out.width = "100%"
+)
+
+SERVER <- "https://opal-demo.obiba.org"
+
+# The examples need OBiBa's public Opal demo server. If it cannot be reached
+# (e.g., when building offline), the code is shown but not run.
+demo_available <- local({
+  old <- options(timeout = 5)
+  on.exit(options(old))
+  tryCatch(
+    {
+      con <- url(SERVER, open = "rb")
+      close(con)
+      TRUE
+    },
+    error = function(e) FALSE,
+    warning = function(w) FALSE
+  )
+})
+knitr::opts_chunk$set(eval = demo_available)
+```
+
+A federated study usually spans several DataSHIELD servers (sites). Both
+`audit()` and `report()` accept a **named list** of connections, one per site,
+and return one audit per element plus a combined report.
+
+If you have not used `audit()` and `report()` before, start with
+`vignette("getting-started", package = "dsROCrate")`.
+
+```{r setup, eval = TRUE}
+library(dsROCrate)
+```
+
+## 1. Connect to each site
+
+In a real study, each connection points to a different server. To keep this
+example self-contained, we open two connections to the same demo server and
+name them as if they were two sites. Use an administrator or `Audit system`
+account at every site.
+
+```{r connect}
+USERNAME <- "administrator"
+USERPASS <- "password"
+
+cons <- list(
+  site_a = opalr::opal.login(USERNAME, USERPASS, url = SERVER),
+  site_b = opalr::opal.login(USERNAME, USERPASS, url = SERVER)
+)
+```
+
+## 2. Audit the study
+
+The arguments of `audit()` are applied to every site, so the project (and, if
+given, the user and tables) must exist in each of them.
+
+```{r audit, warning = FALSE}
+study_audit <- cons |>
+  audit(project = "CNSIM", tables = "CNSIM1", user = "dsuser")
+
+# one RO-Crate per site
+names(study_audit)
+
+print(study_audit$site_a)
+```
+
+## 3. Create a study report
+
+As for a single crate, we can first generate only the contents of the report:
+
+```{r report_overview}
+report_file <- tempfile(fileext = ".Rmd")
+
+study_parts <- study_audit |>
+  report(filepath = report_file, render = FALSE)
+
+# overview diagram
+study_parts$overview_diagram
+
+# overview table (Safe People, Safe Project and Safe Data)
+knitr::kable(study_parts$overview_data)
+```
+
+and render the full report (HTML) with:
+
+```{r report_render, eval = FALSE}
+study_audit |>
+  report(
+    filepath = report_file,
+    title = "DataSHIELD study audit",
+    render = TRUE,
+    overwrite = TRUE
+  )
+```
+
+## 4. Close the connections
+
+```{r logout}
+invisible(lapply(cons, opalr::opal.logout))
+```
+
+```{r cleanup, include = FALSE}
+unlink(report_file, force = TRUE)
+```

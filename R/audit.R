@@ -1,13 +1,14 @@
 #' Create an audit RO-Crate
 #'
-#' Create an audit RO-Crate following the 5 Safes Principles.
+#' Create an audit RO-Crate from a server connection. If given an RO-Crate,
+#' it is returned unchanged.
 #'
 #' This function handles various audit types, which will be dispatched based on
 #' the input object. If the input object is
 #'
 #' \itemize{
 #'     \item a _connection_ to a DataSHIELD server (e.g., OBiBa's Opal):
-#'.    generates an RO-Crate object with deployment details, including outputs.
+#'     generates an RO-Crate object with deployment details, including outputs.
 #'     \item a _path_ pointing to
 #'     \itemize{
 #'         \item **a `cr8tor` archive / governance bundle**: generates an
@@ -22,14 +23,14 @@
 #'     \itemize{
 #'         \item a _connection_ to a DataSHIELD server (e.g., OBiBa's Opal).
 #'         \item a _path_ pointing to an RO-Crate OR a `cr8tor` archive /
-#'.        governance bundle.
-#'         \item an _RO-Crate_ object.
+#'         governance bundle.
+#'         \item an _RO-Crate_ object. If so, returns the input object.
 #'     }
 #'     Alternatively, a list of any of the above.
 #' @param ... Additional arguments.
 #' @param intent Additional object with governance bundle/specification of the
 #'     intent of a project. It takes the same types as `x`.
-#' @param profile String with profile name (used for OBiBa's Opal backend).
+#' @param profile String with profile name.
 #' @param project String with project name(s) from which to extract Safe Project
 #'     details.
 #' @param resources Vector of strings with the names of the resources, part of

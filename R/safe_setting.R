@@ -19,8 +19,6 @@
 #' To be approved for remote data access, researchers will need to prove that
 #' their organisation meets physical and IT security standards.
 #'
-#' @param ... Other optional arguments. See the full documentation,
-#'     [`?dsROCrate::safe_setting`][safe_setting()].
 #' @inheritParams init
 #'
 #' @returns Updated RO-Crate object with Safe Settings information.

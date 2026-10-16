@@ -66,8 +66,8 @@ the \code{opal} or \code{ArmadilloCredentials} classes), an RO-Crate
 (\link[rocrateR:rocrate]{rocrate} class) or a string with the path to an
 RO-Crate.}
 
-\item{...}{Other optional arguments. See the full documentation,
-\code{\link[=safe_output]{?dsROCrate::safe_output}}.}
+\item{...}{Further arguments passed on to the methods, which are documented
+as separate arguments below.}
 
 \item{path}{String with path pointing to the root of the RO-Crate. This will
 be used to store log files. If not provided, logs will be stored within
@@ -87,7 +87,7 @@ this can be a string with the \code{name} of the current user.}
 values will be extracted from (e.g., OBiBa's Opal). Optional, if \code{x} is
 set to a connection object. If so, then \code{rocrate} is required.}
 
-\item{profile}{String with profile name (used for OBiBa's Opal backend).}
+\item{profile}{String with profile name.}
 
 \item{project}{String with the name of the \link[=safe_project]{Safe Project}.}
 

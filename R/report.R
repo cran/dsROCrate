@@ -2,9 +2,7 @@
 #'
 #' @param x This can be an RO-Crate ([rocrate][rocrateR::rocrate()] class) or a
 #'     string with the path to an RO-Crate.
-#' @param ... Other optional arguments. See the full documentation,
-#'     [`?dsROCrate::report`][report()].
-#'
+#' @inheritParams shared_params
 #' @returns RO-Crate report as markdown (.md) file and/or HTML.
 #' @export
 report <- function(x, ...) {
@@ -50,7 +48,9 @@ report.character <- function(
       include_user_perm = include_user_perm,
       diag_title = diag_title,
       diag_width = diag_width,
-      diag_height = diag_height
+      diag_height = diag_height,
+      max_line_length = max_line_length,
+      ...
     )
 }
 
@@ -63,13 +63,11 @@ report.default <- function(x, ...) {
   )
 }
 
-#' @param study_name String with the study name.
 #' @rdname report
 #' @export
 report.list <- function(
   x,
   ...,
-  study_name,
   title = "DataSHIELD Report",
   filepath = tempfile(fileext = ".md"),
   render = TRUE,
@@ -332,7 +330,7 @@ report.rocrate <- function(
   if (!dir.exists(dirname(filepath))) {
     stop(
       "The given file path directory does not exist. Try running the following",
-      "command first:\n\t`mkdir -r",
+      "command first:\n\t`mkdir -p",
       dirname(filepath),
       "`",
       call. = FALSE

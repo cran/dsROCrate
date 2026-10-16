@@ -41,14 +41,14 @@ the \code{opal} or \code{ArmadilloCredentials} classes), an RO-Crate
 (\link[rocrateR:rocrate]{rocrate} class) or a string with the path to an
 RO-Crate.}
 
-\item{...}{Other optional arguments. See the full documentation,
-\code{\link[=init]{?dsROCrate::init}}.}
+\item{...}{Further arguments passed on to the methods, which are documented
+as separate arguments below.}
 
 \item{rocrate}{RO-Crate object. Optional, if \code{x} is either an RO-Crate
 object or a path to a valid RO-Crate. If so, then \code{connection} is
 required (default: \code{rocrateR::rocrate_5s()}).}
 
-\item{profile}{String with profile name (used for OBiBa's Opal backend).}
+\item{profile}{String with profile name.}
 
 \item{project}{String with the name of the \link[=safe_project]{Safe Project}.}
 

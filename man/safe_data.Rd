@@ -67,10 +67,10 @@ the \code{opal} or \code{ArmadilloCredentials} classes), an RO-Crate
 (\link[rocrateR:rocrate]{rocrate} class) or a string with the path to an
 RO-Crate.}
 
-\item{...}{Other optional arguments. See the full documentation,
-\code{\link[=safe_data]{?dsROCrate::safe_data}}.}
+\item{...}{Further arguments passed on to the methods, which are documented
+as separate arguments below.}
 
-\item{profile}{String with profile name (used for OBiBa's Opal backend).}
+\item{profile}{String with profile name.}
 
 \item{project}{String with the name of the \link[=safe_project]{Safe Project}.}
 

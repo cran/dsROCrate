@@ -1,0 +1,258 @@
+---
+title: "Building an RO-Crate Step by Step"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Building an RO-Crate Step by Step}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  out.width = "100%"
+)
+
+SERVER <- "https://opal-demo.obiba.org"
+
+# The examples need OBiBa's public Opal demo server. If it cannot be reached
+# (e.g., when building offline), the code is shown but not run.
+demo_available <- local({
+  old <- options(timeout = 5)
+  on.exit(options(old))
+  tryCatch(
+    {
+      con <- url(SERVER, open = "rb")
+      close(con)
+      TRUE
+    },
+    error = function(e) FALSE,
+    warning = function(w) FALSE
+  )
+})
+knitr::opts_chunk$set(eval = demo_available)
+
+# the DataSHIELD client packages are only needed to generate some activity
+ds_clients_available <- all(
+  vapply(
+    c("DSI", "DSOpal", "dsBaseClient"),
+    requireNamespace,
+    logical(1),
+    quietly = TRUE
+  )
+)
+
+# helper: count the entities in a crate by type
+crate_summary <- function(crate) {
+  types <- vapply(
+    crate$`@graph`,
+    function(e) {
+      t <- e[["@type"]]
+      if (is.null(t)) NA_character_ else t[1]
+    },
+    character(1)
+  )
+  knitr::kable(as.data.frame(table(Type = types, useNA = "ifany"),
+                             responseName = "Entities"))
+}
+
+options(max_lines = 40)
+```
+
+`audit()` (see `vignette("getting-started", package = "dsROCrate")`) builds the
+whole RO-Crate in one call. This tutorial shows what happens inside: we create
+the crate with `init()` and add the Five Safes one at a time, which is useful
+to inspect each component, or to include only some of them.
+
+```{r setup, eval = TRUE}
+library(dsROCrate)
+```
+
+## 1. Connect and set the study details
+
+```{r connect}
+# server access (administrator account on the demo server)
+USERNAME <- "administrator"
+USERPASS <- "password"
+# credentials of `dsuser`, only used to generate activity in section 3
+DSUSERPASS <- "P@ssw0rd"
+
+# Five Safes details
+PROJECT <- "CNSIM"
+TABLES <- "CNSIM1"
+USER <- "dsuser"
+
+con <- opalr::opal.login(
+  username = USERNAME,
+  password = USERPASS,
+  url = SERVER
+)
+```
+
+**Note:** `safe_setting()` and `safe_output()` need an administrator or a user
+with the `Audit system` permission, so use such an account for the whole
+tutorial. See `vignette("audit-permissions", package = "dsROCrate")`.
+
+## 2. Initialise the RO-Crate
+
+`init()` creates an empty RO-Crate that follows the
+[5s-crate](https://trefx.uk/5s-crate/0.4/) profile (via
+[`{rocrateR}`](https://github.com/ResearchObject/ro-crate-r)) and records the
+connection and the study details. The next functions read them from the crate,
+so you only write them once.
+
+```{r init}
+crate <- con |>
+  init(project = PROJECT, tables = TABLES, user = USER)
+
+crate_summary(crate)
+```
+
+## 3. Generate some activity (optional)
+
+*Safe Output* is built from the server's DataSHIELD logs, so there must be
+recent activity from the audited user. If you are using your own server and
+already have activity, skip this section. Here we log in as `dsuser`, assign
+a table and run two functions:
+
+```{r activity, eval = demo_available && ds_clients_available, results = "hide"}
+# registers the OpalDriver class in the current session
+DSOpal::Opal()
+
+builder <- DSI::newDSLoginBuilder()
+builder$append(
+  server = "study1",
+  url = SERVER,
+  user = USER,
+  password = DSUSERPASS,
+  driver = "OpalDriver"
+)
+conns <- DSI::datashield.login(logins = builder$build())
+
+DSI::datashield.assign.table(
+  conns["study1"],
+  symbol = "dsROCrate_test",
+  table = paste0(PROJECT, ".", TABLES[1]),
+  errors.print = TRUE
+)
+dsBaseClient::ds.ls(datasources = conns["study1"])
+dsBaseClient::ds.summary("dsROCrate_test", datasources = conns["study1"])
+
+DSI::datashield.logout(conns)
+```
+
+The packages `{DSI}`, `{DSOpal}` and `{dsBaseClient}` are needed for this
+section.
+
+## 4. Add the Five Safes
+
+Run `safe_people()` first: the later steps use the people in the crate to leave
+administrator and auditor accounts out of the permissions they record.
+
+### Safe People
+
+Adds a `Person` entity for the user and sets them as the author of the crate.
+
+```{r safe_people}
+crate <- crate |> safe_people()
+
+crate_summary(crate)
+```
+
+### Safe Project
+
+Adds the `Project` entity and links it to its members.
+
+```{r safe_project}
+crate <- crate |> safe_project()
+
+crate_summary(crate)
+```
+
+### Safe Data
+
+Adds the tables (and resources) of the project, who may access them, and the
+lineage between resources and tables, when available.
+
+```{r safe_data}
+crate <- crate |> safe_data()
+
+crate_summary(crate)
+```
+
+### Safe Setting
+
+Adds the disclosure control settings and the software installed on the server.
+
+```{r safe_setting}
+crate <- crate |> safe_setting()
+
+crate_summary(crate)
+```
+
+### Safe Output
+
+Adds the logs of the user's DataSHIELD operations in a period of time (default:
+the last 24 hours), and a table that maps each operation to the symbols,
+tables and columns it used. Set the period with `logs_from` and `logs_to`.
+
+```{r safe_output}
+crate <- crate |>
+  safe_output(
+    logs_from = Sys.time() - 24 * 60^2,
+    logs_to = Sys.time()
+  )
+
+crate_summary(crate)
+```
+
+If no `path` was given to `init()`, the logs are stored inside the crate and
+`safe_output()` warns you about it. To store them as files instead, call
+`init(..., path = "path/to/directory")`.
+
+You can inspect the complete crate with `print(crate)`.
+
+## 5. Save the RO-Crate
+
+The crate can be stored as an RO-Crate bag/archive with
+`rocrateR::bag_rocrate()`:
+
+```{r bag}
+# temporary directory, only for demo purposes
+tmp_path_bag <- file.path(tempdir(), "dsROCrate-building-crates")
+dir.create(tmp_path_bag, showWarnings = FALSE)
+
+path_to_rocrate_bag <- crate |>
+  rocrateR::bag_rocrate(path = tmp_path_bag, overwrite = TRUE)
+```
+
+and its contents explored with:
+
+```{r unbag, eval = demo_available && requireNamespace("fs", quietly = TRUE)}
+path_to_rocrate_bag |>
+  rocrateR::unbag_rocrate(
+    output = file.path(tmp_path_bag, "ROC"),
+    quiet = TRUE
+  ) |>
+  fs::dir_tree()
+```
+
+**Note:** the crate also keeps the server connection in its attributes (so
+that the `safe_*()` functions need no `connection` argument). It is not
+written to the bag, but avoid saving the R object with `saveRDS()`; save the
+bag instead.
+
+## 6. Close the connection and clean up
+
+```{r logout}
+opalr::opal.logout(con)
+unlink(tmp_path_bag, recursive = TRUE, force = TRUE)
+```
+
+Next: turn the crate into a report with `report()`, see
+`vignette("getting-started", package = "dsROCrate")`.
+
+```{r reset, include = FALSE}
+options(max_lines = NULL)
+```

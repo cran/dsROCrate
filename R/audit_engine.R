@@ -7,7 +7,7 @@
 #'     governance archive file, representing the intent of a project and
 #'     associated governance details.
 #' @param ... Other optional arguments, see full documentation for details.
-#' @param profile String with profile name (used for OBiBa's Opal backend).
+#' @param profile String with profile name.
 #' @param project String with project name(s) from which to extract Safe Project
 #'     details.
 #' @param resources Vector of strings with the names of the resources, part of
@@ -98,7 +98,7 @@ audit_engine.opal <- function(
 
   # extract list with all projects to verify `project` contains a valid value
   ds <- backend_projects(x)
-  server_prjs <- ds[, "name"]
+  server_prjs <- ds$name
   idx <- project %in% server_prjs
   if (!all(idx)) {
     stop(

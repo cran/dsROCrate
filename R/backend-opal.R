@@ -1,6 +1,8 @@
 #' @export
 backend_logs.opal <- function(x, ...) {
-  opalr::dsadmin.log(x, ...)
+  logs <- suppressMessages(opalr::dsadmin.log(x, ...))
+  logs[["@timestamp"]] <- parse_utc(logs[["@timestamp"]])
+  logs
 }
 
 #' @export

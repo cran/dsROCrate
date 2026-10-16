@@ -1,3 +1,81 @@
+# dsROCrate 0.2.4
+
+## Bug fixes
+
+* Fixed `safe_output()` reading Opal log timestamps in the local time zone
+  instead of UTC. Opal returns UTC timestamps in ISO 8601 format (e.g.,
+  `2026-10-13T04:26:14.076Z`); they are now parsed as UTC, including fractional
+  seconds and `Z`/`+hh:mm` offsets. Previously, on machines whose time zone was
+  not UTC, the `logs_from`/`logs_to` window could drop recent log entries (or
+  include old ones).
+* Fixed `safe_project()` overwriting the `user` attribute stored in the returned
+  RO-Crate: a loop variable shadowed the `user` argument.
+* Fixed table lineage links (`isBasedOn`) between tables and resources being
+  written to `rocrate$graph` instead of `` rocrate$`@graph` ``, so they are now
+  recorded in the RO-Crate graph.
+* Fixed the symbol registry lookup so it always returns a single row when several
+  symbols share the same `created_at` timestamp (`dplyr::slice_max()` now uses
+  `with_ties = FALSE`).
+* `report()` (path method) now forwards `max_line_length` and `...` to the
+  RO-Crate method; previously `max_line_length` was silently ignored.
+* The error shown when the report directory does not exist now suggests
+  `mkdir -p` (was `mkdir -r`).
+* `audit()` and `extract_safe_project()` (opal method) now read project names
+  with `$name`, so they work whether `backend_projects()` returns a data frame
+  or a tibble.
+
+## Changes
+
+* Timestamps written by `safe_output()` (the audit log tibble, the
+  `_mappings.csv` file, and `as.data.frame()` of `safe_call` objects) are now
+  ISO 8601 in UTC with a trailing `Z` (e.g., `2026-07-01T10:00:00Z`). Code that
+  compares these values as strings will need to be updated.
+* `safe_output()`: `logs_from` and `logs_to` accept `POSIXct` values or
+  date-time strings, with or without a `Z`/UTC offset. Strings without an offset
+  are interpreted as UTC, and `Inf`/`-Inf` still mean "no limit".
+* `report()` for a list of RO-Crates no longer has the unused `study_name`
+  argument.
+
+## Documentation
+
+* Split the `getting-started` vignette into three. `getting-started` now covers
+  connecting, `check_permissions()`, `audit()` and `report()`; the new
+  `building-crates` vignette shows the step-by-step workflow with `init()` and
+  the `safe_*()` functions (including saving the RO-Crate); and the new
+  `auditing-studies` vignette shows how to audit several servers as one study.
+* `audit-permissions` vignette: explains how the permission check works, lists
+  the common error messages with their likely causes, and gives the minimum
+  Opal version (5.7.2).
+* `deploy-local-datashield-server-with-opal` vignette: corrected the clone
+  directory, added the demo accounts, the Opal version requirement, an audit
+  example and instructions to stop the server, and removed unused code.
+* Vignettes now only run their examples when the public Opal demo server can be
+  reached; otherwise the code is shown but not evaluated.
+* README: added the supported-backend and requirements table, a guide on which
+  function to use, `check_permissions()` in the quick start, and a list of all
+  vignettes.
+* Reference documentation: the description of `...` is now defined once
+  (`shared_params`) and inherited by the functions, the documented default of
+  `user_id_suffix` was corrected (`"#person:"`), the Opal-specific wording was
+  removed from the `profile` argument, and stray formatting in the `audit()`
+  documentation was fixed.
+* Updated spell-check `WORDLIST`.
+
+## Internal Changes
+
+* Added `parse_utc()`, `parse_utc_limit()`, `format_utc()` and `fmt_limit()`
+  (`utils-date.R`) so that all timestamps are parsed and formatted the same way.
+  They replace `is_valid_posixct()`.
+* `backend_logs()` (opal method) now returns `@timestamp` as `POSIXct` (UTC) and
+  suppresses the progress messages printed by `opalr`. Other backends are
+  expected to return `POSIXct` timestamps.
+* Added tests for `parse_utc()`, run under a non-UTC time zone.
+* `safe_output()` tests covering `RESOLVE`/`ASSIGN` operations now set `logs_from`
+  and `logs_to` explicitly, so they no longer depend on the time they are run.
+* Test mocks now use `type = "group"` for group permissions, matching the values
+  returned by Opal, and the `report()` tests no longer pass `study_name`.
+* Rebuilt the vignettes against the current Opal demo server (6.0.1).
+
 # dsROCrate 0.2.3
 
 ## New Features

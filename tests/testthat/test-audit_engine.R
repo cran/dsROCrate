@@ -43,7 +43,7 @@ test_that("audit_engine.opal orchestrates the 5 Safes steps correctly", {
       tibble::tibble(
         subject = c("alice", "bob_admin", "opal-administrator"),
         permission = c("view", "administrate", "administrate"),
-        type = c("user", "user", "groups")
+        type = c("user", "user", "group")
       )
     }
   )
@@ -122,7 +122,7 @@ test_that("audit_engine.opal filters Safe People by the `user` argument", {
       tibble::tibble(
         subject = c("alice", "carol", "opal-administrator"),
         permission = c("view", "view", "administrate"),
-        type = c("user", "user", "groups")
+        type = c("user", "user", "group")
       )
     }
   )
@@ -168,7 +168,7 @@ test_that("audit_engine.opal errors if the `user` filter matches nobody", {
       tibble::tibble(
         subject = c("alice", "carol", "opal-administrator"),
         permission = c("view", "view", "administrate"),
-        type = c("user", "user", "groups")
+        type = c("user", "user", "group")
       )
     }
   )

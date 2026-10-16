@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Building an RO-Crate Step by Step</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Building an RO-Crate Step by Step</h1>
+
+
+
+<p><code>audit()</code> (see
+<code>vignette(&quot;getting-started&quot;, package = &quot;dsROCrate&quot;)</code>) builds
+the whole RO-Crate in one call. This tutorial shows what happens inside:
+we create the crate with <code>init()</code> and add the Five Safes one
+at a time, which is useful to inspect each component, or to include only
+some of them.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(dsROCrate)</span></code></pre></div>
+<div id="connect-and-set-the-study-details" class="section level2">
+<h2>1. Connect and set the study details</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># server access (administrator account on the demo server)</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>USERNAME <span class="ot">&lt;-</span> <span class="st">&quot;administrator&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>USERPASS <span class="ot">&lt;-</span> <span class="st">&quot;password&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># credentials of `dsuser`, only used to generate activity in section 3</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>DSUSERPASS <span class="ot">&lt;-</span> <span class="st">&quot;P@ssw0rd&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co"># Five Safes details</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>PROJECT <span class="ot">&lt;-</span> <span class="st">&quot;CNSIM&quot;</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>TABLES <span class="ot">&lt;-</span> <span class="st">&quot;CNSIM1&quot;</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>USER <span class="ot">&lt;-</span> <span class="st">&quot;dsuser&quot;</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>con <span class="ot">&lt;-</span> opalr<span class="sc">::</span><span class="fu">opal.login</span>(</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>  <span class="at">username =</span> USERNAME,</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>  <span class="at">password =</span> USERPASS,</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>  <span class="at">url =</span> SERVER</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Note:</strong> <code>safe_setting()</code> and
+<code>safe_output()</code> need an administrator or a user with the
+<code>Audit system</code> permission, so use such an account for the
+whole tutorial. See
+<code>vignette(&quot;audit-permissions&quot;, package = &quot;dsROCrate&quot;)</code>.</p>
+</div>
+<div id="initialise-the-ro-crate" class="section level2">
+<h2>2. Initialise the RO-Crate</h2>
+<p><code>init()</code> creates an empty RO-Crate that follows the <a href="https://trefx.uk/5s-crate/0.4/">5s-crate</a> profile (via <a href="https://github.com/ResearchObject/ro-crate-r"><code>{rocrateR}</code></a>)
+and records the connection and the study details. The next functions
+read them from the crate, so you only write them once.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>crate <span class="ot">&lt;-</span> con <span class="sc">|&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="fu">init</span>(<span class="at">project =</span> PROJECT, <span class="at">tables =</span> TABLES, <span class="at">user =</span> USER)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">crate_summary</span>(crate)</span></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Type</th>
+<th align="right">Entities</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">CreativeWork</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Dataset</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="generate-some-activity-optional" class="section level2">
+<h2>3. Generate some activity (optional)</h2>
+<p><em>Safe Output</em> is built from the server’s DataSHIELD logs, so
+there must be recent activity from the audited user. If you are using
+your own server and already have activity, skip this section. Here we
+log in as <code>dsuser</code>, assign a table and run two functions:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># registers the OpalDriver class in the current session</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>DSOpal<span class="sc">::</span><span class="fu">Opal</span>()</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>builder <span class="ot">&lt;-</span> DSI<span class="sc">::</span><span class="fu">newDSLoginBuilder</span>()</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>builder<span class="sc">$</span><span class="fu">append</span>(</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">server =</span> <span class="st">&quot;study1&quot;</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">url =</span> SERVER,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">user =</span> USER,</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="at">password =</span> DSUSERPASS,</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">driver =</span> <span class="st">&quot;OpalDriver&quot;</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>)</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>conns <span class="ot">&lt;-</span> DSI<span class="sc">::</span><span class="fu">datashield.login</span>(<span class="at">logins =</span> builder<span class="sc">$</span><span class="fu">build</span>())</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; Logging into the collaborating servers</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>DSI<span class="sc">::</span><span class="fu">datashield.assign.table</span>(</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>  conns[<span class="st">&quot;study1&quot;</span>],</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>  <span class="at">symbol =</span> <span class="st">&quot;dsROCrate_test&quot;</span>,</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>  <span class="at">table =</span> <span class="fu">paste0</span>(PROJECT, <span class="st">&quot;.&quot;</span>, TABLES[<span class="dv">1</span>]),</span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>  <span class="at">errors.print =</span> <span class="cn">TRUE</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>)</span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>dsBaseClient<span class="sc">::</span><span class="fu">ds.ls</span>(<span class="at">datasources =</span> conns[<span class="st">&quot;study1&quot;</span>])</span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a>dsBaseClient<span class="sc">::</span><span class="fu">ds.summary</span>(<span class="st">&quot;dsROCrate_test&quot;</span>, <span class="at">datasources =</span> conns[<span class="st">&quot;study1&quot;</span>])</span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a>DSI<span class="sc">::</span><span class="fu">datashield.logout</span>(conns)</span></code></pre></div>
+<p>The packages <code>{DSI}</code>, <code>{DSOpal}</code> and
+<code>{dsBaseClient}</code> are needed for this section.</p>
+</div>
+<div id="add-the-five-safes" class="section level2">
+<h2>4. Add the Five Safes</h2>
+<p>Run <code>safe_people()</code> first: the later steps use the people
+in the crate to leave administrator and auditor accounts out of the
+permissions they record.</p>
+<div id="safe-people" class="section level3">
+<h3>Safe People</h3>
+<p>Adds a <code>Person</code> entity for the user and sets them as the
+author of the crate.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>crate <span class="ot">&lt;-</span> crate <span class="sc">|&gt;</span> <span class="fu">safe_people</span>()</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">crate_summary</span>(crate)</span></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Type</th>
+<th align="right">Entities</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">CreativeWork</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Dataset</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Person</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="safe-project" class="section level3">
+<h3>Safe Project</h3>
+<p>Adds the <code>Project</code> entity and links it to its members.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>crate <span class="ot">&lt;-</span> crate <span class="sc">|&gt;</span> <span class="fu">safe_project</span>()</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">crate_summary</span>(crate)</span></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Type</th>
+<th align="right">Entities</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">CreativeWork</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Dataset</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Person</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Project</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="safe-data" class="section level3">
+<h3>Safe Data</h3>
+<p>Adds the tables (and resources) of the project, who may access them,
+and the lineage between resources and tables, when available.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>crate <span class="ot">&lt;-</span> crate <span class="sc">|&gt;</span> <span class="fu">safe_data</span>()</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">crate_summary</span>(crate)</span></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Type</th>
+<th align="right">Entities</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">CreativeWork</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Dataset</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Person</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Project</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">ReadAction</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="safe-setting" class="section level3">
+<h3>Safe Setting</h3>
+<p>Adds the disclosure control settings and the software installed on
+the server.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>crate <span class="ot">&lt;-</span> crate <span class="sc">|&gt;</span> <span class="fu">safe_setting</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">crate_summary</span>(crate)</span></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Type</th>
+<th align="right">Entities</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">CreativeWork</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="left">Dataset</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Person</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Project</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">PropertyValue</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="left">ReadAction</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">SoftwareApplication</td>
+<td align="right">4</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="safe-output" class="section level3">
+<h3>Safe Output</h3>
+<p>Adds the logs of the user’s DataSHIELD operations in a period of time
+(default: the last 24 hours), and a table that maps each operation to
+the symbols, tables and columns it used. Set the period with
+<code>logs_from</code> and <code>logs_to</code>.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>crate <span class="ot">&lt;-</span> crate <span class="sc">|&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">safe_output</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>    <span class="at">logs_from =</span> <span class="fu">Sys.time</span>() <span class="sc">-</span> <span class="dv">24</span> <span class="sc">*</span> <span class="dv">60</span><span class="sc">^</span><span class="dv">2</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>    <span class="at">logs_to =</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  )</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt;  Found 195 records... Imported 195 records. Simplifying...</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; Warning: A `path` wasn&#39;t provided! The logs will be included in the RO-Crate</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; object, under the `content` tag!</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="fu">crate_summary</span>(crate)</span></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Type</th>
+<th align="right">Entities</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">CreativeWork</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="left">Dataset</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">File</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Person</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Project</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">PropertyValue</td>
+<td align="right">11</td>
+</tr>
+<tr class="odd">
+<td align="left">ReadAction</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">SoftwareApplication</td>
+<td align="right">4</td>
+</tr>
+</tbody>
+</table>
+<p>If no <code>path</code> was given to <code>init()</code>, the logs
+are stored inside the crate and <code>safe_output()</code> warns you
+about it. To store them as files instead, call
+<code>init(..., path = &quot;path/to/directory&quot;)</code>.</p>
+<p>You can inspect the complete crate with
+<code>print(crate)</code>.</p>
+</div>
+</div>
+<div id="save-the-ro-crate" class="section level2">
+<h2>5. Save the RO-Crate</h2>
+<p>The crate can be stored as an RO-Crate bag/archive with
+<code>rocrateR::bag_rocrate()</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># temporary directory, only for demo purposes</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>tmp_path_bag <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">&quot;dsROCrate-building-crates&quot;</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">dir.create</span>(tmp_path_bag, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>path_to_rocrate_bag <span class="ot">&lt;-</span> crate <span class="sc">|&gt;</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  rocrateR<span class="sc">::</span><span class="fu">bag_rocrate</span>(<span class="at">path =</span> tmp_path_bag, <span class="at">overwrite =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; RO-Crate successfully &#39;bagged&#39;!</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; For details, see: /var/folders/59/4_l6kbyj2qsczmk2b52qg_f40000gn/T//RtmpTwb5vi/dsROCrate-building-crates/rocrate-dbba4a15e4ea6b051c9c0e1a1ecf5aaa.zip</span></span></code></pre></div>
+<p>and its contents explored with:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>path_to_rocrate_bag <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  rocrateR<span class="sc">::</span><span class="fu">unbag_rocrate</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>    <span class="at">output =</span> <span class="fu">file.path</span>(tmp_path_bag, <span class="st">&quot;ROC&quot;</span>),</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>    <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  fs<span class="sc">::</span><span class="fu">dir_tree</span>()</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; /private/var/folders/59/4_l6kbyj2qsczmk2b52qg_f40000gn/T/RtmpTwb5vi/dsROCrate-building-crates/ROC</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; ├── bag-info.txt</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; ├── bagit.txt</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; ├── data</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt; │   ├── 20261015T061400-dslogs-dsuser.log</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt; │   ├── 20261015T061400-dslogs-dsuser_mappings.csv</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; │   └── ro-crate-metadata.json</span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt; ├── manifest-sha512.txt</span></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt; └── tagmanifest-sha512.txt</span></span></code></pre></div>
+<p><strong>Note:</strong> the crate also keeps the server connection in
+its attributes (so that the <code>safe_*()</code> functions need no
+<code>connection</code> argument). It is not written to the bag, but
+avoid saving the R object with <code>saveRDS()</code>; save the bag
+instead.</p>
+</div>
+<div id="close-the-connection-and-clean-up" class="section level2">
+<h2>6. Close the connection and clean up</h2>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>opalr<span class="sc">::</span><span class="fu">opal.logout</span>(con)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">unlink</span>(tmp_path_bag, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">force =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<p>Next: turn the crate into a report with <code>report()</code>, see
+<code>vignette(&quot;getting-started&quot;, package = &quot;dsROCrate&quot;)</code>.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

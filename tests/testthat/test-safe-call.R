@@ -34,7 +34,7 @@ test_that("as.data.frame.safe_call returns the expected columns", {
   expect_equal(res$user, "alice")
   expect_equal(res$session, "session-1")
   expect_equal(res$profile, "default")
-  expect_equal(res$timestamp, "2026-07-01T10:00:00")
+  expect_equal(res$timestamp, "2026-07-01T10:00:00Z")
   expect_true(is.list(res$args[[1]]))
   expect_equal(res$args[[1]], x$args)
 })

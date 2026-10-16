@@ -1,7 +1,6 @@
 #' Extract Safe Project entity(ies)
 #'
 #' @inheritParams safe_data
-#' @param ... Other optional arguments. See the full documentation
 #' @param rocrate (Optional) RO-Crate object to update with Safe Project
 #'     details.
 #' @param id (Optional) Vector with `@id` strings for Safe Project entity(ies)
@@ -25,7 +24,7 @@ extract_safe_project.opal <- function(
 
   # cycle through the data source (x) and extract project details
   for (i in seq_len(nrow(ds))) {
-    project <- ds[i, "name"]
+    project <- ds$name[i]
     if (!is.na(project) && !is.null(project)) {
       suppressWarnings({
         rocrate <- rocrate |>

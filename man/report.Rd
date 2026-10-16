@@ -30,7 +30,6 @@ report(x, ...)
 \method{report}{list}(
   x,
   ...,
-  study_name,
   title = "DataSHIELD Report",
   filepath = tempfile(fileext = ".md"),
   render = TRUE,
@@ -62,8 +61,8 @@ report(x, ...)
 \item{x}{This can be an RO-Crate (\link[rocrateR:rocrate]{rocrate} class) or a
 string with the path to an RO-Crate.}
 
-\item{...}{Other optional arguments. See the full documentation,
-\code{\link[=report]{?dsROCrate::report}}.}
+\item{...}{Further arguments passed on to the methods, which are documented
+as separate arguments below.}
 
 \item{title}{String with title for the report (default: 'DataSHIELD Report').}
 
@@ -91,8 +90,6 @@ overview's diagram (default: \code{NULL}, estimated based on number of nodes).}
 
 \item{max_line_length}{Integer with the maximum number of characters per line
 in the RO-Crate to be printed in the report.}
-
-\item{study_name}{String with the study name.}
 }
 \value{
 RO-Crate report as markdown (.md) file and/or HTML.

@@ -6,8 +6,7 @@
 #'     the `opal` or `ArmadilloCredentials` classes), an RO-Crate
 #'     ([rocrate][rocrateR::rocrate()] class) or a string with the path to an
 #'     RO-Crate.
-#' @param ... Other optional arguments. See the full documentation,
-#'     [`?dsROCrate::init`][init()].
+#' @inheritParams shared_params
 #' @param connection Connection object for the 'DataSHIELD' server where the
 #'     values will be extracted from (e.g., OBiBa's Opal). Optional, if `x` is
 #'     set to a connection object. If so, then `rocrate` is required.
@@ -17,7 +16,7 @@
 #' @param path String with path pointing to the root of the RO-Crate. This will
 #'     be used to store log files. If not provided, logs will be stored within
 #'     the RO-Crate returned by this function.
-#' @param profile String with profile name (used for OBiBa's Opal backend).
+#' @param profile String with profile name.
 #' @param project String with the name of the [Safe Project][safe_project()].
 #' @param resources Vector of strings with the names of the resources, part of
 #'     `project`. Optional, if not provided, all the resources associated to
@@ -102,6 +101,3 @@ init.rocrate <- function(
     user = user
   )
 }
-
-# helper functions ----
-`%||%` <- function(a, b) if (!is.null(a) && !is.na(a) && a != "") a else b

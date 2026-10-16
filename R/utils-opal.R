@@ -80,11 +80,11 @@ add_lineage_relations <- function(rocrate, lineage_df, id_lookup) {
     tbl_id <- id_lookup[[lineage_df$table_name[i]]]
     res_id <- id_lookup[[lineage_df$resource_name[i]]]
 
-    tbl_ent <- rocrate$graph[[tbl_id]]
+    tbl_ent <- rocrate$`@graph`[[tbl_id]]
 
     tbl_ent$isBasedOn <- list(`@id` = res_id)
 
-    rocrate$graph[[tbl_id]] <- tbl_ent
+    rocrate$`@graph`[[tbl_id]] <- tbl_ent
   }
 
   rocrate
@@ -352,7 +352,7 @@ safe_time <- function(x) {
     return(character(1))
   }
   tryCatch(
-    format(as.POSIXct(x), "%Y-%m-%dT%H:%M:%SZ"),
+    format_utc(as.POSIXct(x)),
     error = function(e) character(1)
   )
 }

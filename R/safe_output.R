@@ -13,8 +13,6 @@
 #' methods and standards for output checking that are accredited by the UK
 #' Statistics Authority.
 #'
-#' @param ... Other optional arguments. See the full documentation,
-#'     [`?dsROCrate::safe_output`][safe_output()].
 #' @param logs_to Upper limit timestamp to filter out the outputs generated
 #'     (default: `Sys.time()`, current system time).
 #' @param logs_from Lower limit timestamp to filter out the outputs generated
@@ -112,44 +110,19 @@ safe_output.opal <- function(
   }
 
   # create formatted versions of input dates
-  logs_from_is_valid <- FALSE
-  if (!is.infinite(logs_from)) {
-    logs_from_is_valid <- is_valid_posixct(logs_from)
-  } else {
-    # assumes that a value of `Inf` is a valid date
-    logs_from_is_valid <- TRUE
-  }
+  logs_from <- parse_utc_limit(logs_from)
+  logs_to <- parse_utc_limit(logs_to)
 
-  logs_to_is_valid <- FALSE
-  if (!is.infinite(logs_to)) {
-    logs_to_is_valid <- is_valid_posixct(logs_to)
-  } else {
-    # assumes that a value of `Inf` is a valid date
-    logs_to_is_valid <- TRUE
-  }
-
-  # display error message if either date is invalid
-  if (!all(logs_from_is_valid, logs_to_is_valid)) {
+  bad <- c(logs_from = anyNA(logs_from), logs_to = anyNA(logs_to))
+  if (any(bad)) {
     stop(
-      paste0(
-        "Invalid date string identified for: ",
-        ifelse(logs_from_is_valid, "", "\n  - logs_from"),
-        ifelse(logs_to_is_valid, "", "\n  - logs_to")
-      ),
+      "Invalid date string identified for:",
+      paste0("\n  - ", names(bad)[bad], collapse = ""),
       call. = FALSE
     )
   }
-
-  logs_from_formatted <- ifelse(
-    is.infinite(logs_from),
-    "ALL",
-    format(as.POSIXct(logs_from), '%Y-%m-%d %H:%M:%S')
-  )
-  logs_to_formatted <- ifelse(
-    is.infinite(logs_to),
-    "ALL",
-    format(as.POSIXct(logs_to), '%Y-%m-%d %H:%M:%S')
-  )
+  logs_from_formatted <- fmt_limit(logs_from)
+  logs_to_formatted <- fmt_limit(logs_to)
 
   # validate backend
   validate_backend(x, ...)
@@ -223,9 +196,6 @@ safe_output.opal <- function(
   userlogs_tbl <- backend_logs(x) |>
     tibble::as_tibble() |>
     dplyr::bind_rows(tibble::tibble(ds_profile = character())) |>
-    dplyr::mutate(
-      `@timestamp` = as.POSIXct(`@timestamp`, format = "%Y-%m-%dT%H:%M:%S")
-    ) |>
     # filter logs
     dplyr::filter(`@timestamp` >= logs_from, `@timestamp` <= logs_to) |>
     dplyr::filter(logger_name == "datashield.user") |>
@@ -240,7 +210,7 @@ safe_output.opal <- function(
         sprintf(
           "[%s][%s]%-12s%s",
           level,
-          format(`@timestamp`, "%Y-%m-%dT%H:%M:%S"),
+          format_utc(`@timestamp`),
           paste0("[", ds_action, "]"),
           message
         )
@@ -399,7 +369,7 @@ safe_output.opal <- function(
       )) |>
       dplyr::transmute(
         id,
-        timestamp = format(`@timestamp`, "%Y-%m-%dT%H:%M:%S"),
+        timestamp = format_utc(`@timestamp`),
         action = ds_action,
         user = username,
         r_cmd = dplyr::case_when(
@@ -547,7 +517,7 @@ safe_output.opal <- function(
     dplyr::filter((ds_action %in% c("OPEN"))) |>
     dplyr::mutate(
       # format timestamp
-      timestamp = format(`@timestamp`, '%Y-%m-%dT%H:%M:%S'),
+      timestamp = format_utc(`@timestamp`),
       # attach session ID, `ds_id`, if `ds_action == 'OPEN'`
       ds_eval = paste0("Open session: ", ds_id),
       # set `ds_function = 'DSI::datashield.login'`
@@ -569,7 +539,7 @@ safe_output.opal <- function(
   assign_tbl <- symbols_tbl |>
     dplyr::transmute(
       id,
-      timestamp = format(created_at, "%Y-%m-%dT%H:%M:%S"),
+      timestamp = format_utc(created_at),
       action = action,
       user,
       r_cmd = dplyr::case_when(

@@ -8,84 +8,102 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
+# nothing in this vignette is run: it needs a server and credentials
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = FALSE
 )
 ```
 
-# Overview
+## Overview
 
-`{dsROCrate}` requires elevated permissions when auditing backend systems.
+`{dsROCrate}` audits a DataSHIELD server by reading information that ordinary
+analyst accounts cannot see. This vignette explains:
 
-Depending on the backend implementation, this may require:
+- what is read and why elevated permissions are needed,
+- how `{dsROCrate}` checks that your account is suitable,
+- how to create a dedicated auditor account (Opal),
+- what to do when the check fails.
 
-- administrator privileges,
-- audit privileges,
-- or backend-specific read access to system metadata.
+## Supported backends
 
-Without these permissions, `{dsROCrate}` may be unable to retrieve
-the metadata required for audit and RO-Crate generation workflows.
+| Backend | Status | Required account |
+|---------|--------|------------------|
+| [OBiBa Opal](https://www.obiba.org/pages/products/opal/) | Supported (Opal 5.7.2 or later) | Administrator, or a user with the `Audit system` permission |
+| [MOLGENIS Armadillo](https://molgenis.github.io/molgenis-service-armadillo/) | In development | -- |
 
-This vignette describes:
+## Why are elevated permissions required?
 
-- why elevated permissions are required,
-- how permission validation works,
-- and how to configure supported backends.
+An audit reads (and never changes) the following:
 
+- the DataSHIELD logs: who did what and when,
+- the DataSHIELD settings (e.g., disclosure controls) and the R packages
+  installed on the server, for each profile,
+- the user accounts and groups,
+- the system-level permissions, used to tell administrators and auditors
+  apart from regular users,
+- the projects and their tables and resources, with their permissions.
 
-# Why are elevated permissions required?
+Standard user accounts cannot access most of this, so without suitable
+permissions `{dsROCrate}` cannot build the Safe People, Safe Setting and Safe
+Output parts of the RO-Crate.
 
-`dsROCrate` performs metadata and configuration inspection operations
-against supported backend systems.
+## How the permission check works
 
-These operations may include access to:
+Every `init()`, `safe_*()` and `audit()` call first runs
+`check_permissions()`, which you can also call yourself:
 
-- system configuration metadata,
-- authentication configuration,
-- datasource metadata,
-- project metadata,
-- audit-relevant server settings.
+```{r}
+con <- opalr::opal.login(
+  username = "audit_user",
+  password = "secret",
+  url = "https://opal-demo.obiba.org"
+)
 
-Standard user accounts may not have sufficient privileges for these
-operations.
+dsROCrate::check_permissions(con, verbose = TRUE)
+#> You are ready to audit this system!
+```
 
+For Opal, the check tries two harmless requests with your account:
 
-# Supported backends
+1. looking up user accounts, which only administrators are allowed to do,
+2. looking up the DataSHIELD profiles, which administrators and users with the
+   `Audit system` permission are allowed to do.
 
-Currently supported backend permission configurations:
+The account is accepted when **both succeed** (an administrator) or when the
+**second succeeds and the first is refused** (an auditor). Anything else is
+rejected with the error:
 
-- Opal
+```
+The supplied backend connection does not have sufficient permissions.
 
-Future backend-specific instructions may include:
+{dsROCrate} requires elevated permissions to perform audit operations.
+...
+```
 
-- Armadillo
+Other checks run at the same time: the connection must still be valid, and the
+server must be Opal 5.7.2 or later (the `Audit system` permission was
+introduced in Opal 5.7).
 
+## Opal: create an audit user
 
-# Opal
-
-**NOTE:** Opal 5.7+ is required, as that's when the _audit_ role was introduced.
-
-## Required permissions
-
-For Opal backends, the connected user must have at least one of:
-
-- administrator privileges, or
-- the `Audit system` permission.
-
-## Configuring an Opal audit user
+**Note:** menu labels may differ slightly between Opal versions.
 
 ### Step 1: Log in as an administrator
 
-Log in to the Opal web interface using an administrator account.
+Log in to the Opal web interface with an administrator account.
 
 ### Step 2: Create a user (optional)
 
-If a dedicated audit user does not already exist:
+If a dedicated audit user does not exist yet:
 
 1. Open the **Administration** tab.
 2. Under **Data Access**, select **Users and Groups**.
 3. Create a new user account for auditing purposes.
+
+We recommend a dedicated account, separate from the analysts' accounts, so the
+audit user has no more access than it needs.
 
 ### Step 3: Grant audit permissions
 
@@ -93,34 +111,25 @@ If a dedicated audit user does not already exist:
 2. Under **System**, select **General Settings**.
 3. Open the **Permissions** section.
 4. Click the **+** button.
-5. Select:
-   - **Add user permission**
+5. Select **Add user permission**.
 6. Enter the username of the audit user.
-7. Select:
-   - **Audit system**
+7. Select **Audit system**.
 8. Click **Submit**.
 
+### Step 4: Check the account
 
---------------------------------------------------------------------------------
+Log in as the audit user and run `check_permissions()`, as shown in the
+previous section. You can now use this connection with `audit()`, see
+`vignette("getting-started", package = "dsROCrate")`.
 
-# Example usage
+## Troubleshooting
 
-```{r eval = FALSE}
-con <- opalr::opal.login(
-  username = "audit_user",
-  password = "secret",
-  url = "https://opal-demo.obiba.org"
-)
+| Message | Likely cause and fix |
+|---------|----------------------|
+| `The supplied backend connection does not have sufficient permissions.` | The account is neither an administrator nor an auditor. Check that the user was granted **Audit system** (step 3) and, if you were already logged in when the permission was granted, log in again. |
+| `Opal >= 5.7.2 is required, but server version is X.Y.Z.` | The server is too old. Upgrade Opal. |
+| `The given connection is not valid!` | The connection object is no longer usable (e.g., it was saved and reloaded, or the session was closed). Create it again with `opalr::opal.login()`. |
+| ``The `project = 'NAME'` was not found in the given Opal connection!`` | The project name is misspelled, or it does not exist on this server. |
 
-dsROCrate::check_permissions(con)
-```
-
-
-# Troubleshooting
-
-## Insufficient permissions
-
-Ensure the connected user has the permissions required for the
-target backend.
-
-See the backend-specific sections in this vignette for details.
+If the message is not listed here, please
+[open an issue](https://github.com/FederatedMethods/dsROCrate/issues).

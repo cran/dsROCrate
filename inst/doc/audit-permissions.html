@@ -341,79 +341,120 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<div id="overview" class="section level1">
-<h1>Overview</h1>
-<p><code>{dsROCrate}</code> requires elevated permissions when auditing
-backend systems.</p>
-<p>Depending on the backend implementation, this may require:</p>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p><code>{dsROCrate}</code> audits a DataSHIELD server by reading
+information that ordinary analyst accounts cannot see. This vignette
+explains:</p>
 <ul>
-<li>administrator privileges,</li>
-<li>audit privileges,</li>
-<li>or backend-specific read access to system metadata.</li>
-</ul>
-<p>Without these permissions, <code>{dsROCrate}</code> may be unable to
-retrieve the metadata required for audit and RO-Crate generation
-workflows.</p>
-<p>This vignette describes:</p>
-<ul>
-<li>why elevated permissions are required,</li>
-<li>how permission validation works,</li>
-<li>and how to configure supported backends.</li>
+<li>what is read and why elevated permissions are needed,</li>
+<li>how <code>{dsROCrate}</code> checks that your account is
+suitable,</li>
+<li>how to create a dedicated auditor account (Opal),</li>
+<li>what to do when the check fails.</li>
 </ul>
 </div>
-<div id="why-are-elevated-permissions-required" class="section level1">
-<h1>Why are elevated permissions required?</h1>
-<p><code>dsROCrate</code> performs metadata and configuration inspection
-operations against supported backend systems.</p>
-<p>These operations may include access to:</p>
-<ul>
-<li>system configuration metadata,</li>
-<li>authentication configuration,</li>
-<li>datasource metadata,</li>
-<li>project metadata,</li>
-<li>audit-relevant server settings.</li>
-</ul>
-<p>Standard user accounts may not have sufficient privileges for these
-operations.</p>
+<div id="supported-backends" class="section level2">
+<h2>Supported backends</h2>
+<table style="width:100%;">
+<colgroup>
+<col width="25%" />
+<col width="22%" />
+<col width="51%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Backend</th>
+<th>Status</th>
+<th>Required account</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://www.obiba.org/pages/products/opal/">OBiBa
+Opal</a></td>
+<td>Supported (Opal 5.7.2 or later)</td>
+<td>Administrator, or a user with the <code>Audit system</code>
+permission</td>
+</tr>
+<tr class="even">
+<td><a href="https://molgenis.github.io/molgenis-service-armadillo/">MOLGENIS
+Armadillo</a></td>
+<td>In development</td>
+<td>–</td>
+</tr>
+</tbody>
+</table>
 </div>
-<div id="supported-backends" class="section level1">
-<h1>Supported backends</h1>
-<p>Currently supported backend permission configurations:</p>
+<div id="why-are-elevated-permissions-required" class="section level2">
+<h2>Why are elevated permissions required?</h2>
+<p>An audit reads (and never changes) the following:</p>
 <ul>
-<li>Opal</li>
+<li>the DataSHIELD logs: who did what and when,</li>
+<li>the DataSHIELD settings (e.g., disclosure controls) and the R
+packages installed on the server, for each profile,</li>
+<li>the user accounts and groups,</li>
+<li>the system-level permissions, used to tell administrators and
+auditors apart from regular users,</li>
+<li>the projects and their tables and resources, with their
+permissions.</li>
 </ul>
-<p>Future backend-specific instructions may include:</p>
-<ul>
-<li>Armadillo</li>
-</ul>
+<p>Standard user accounts cannot access most of this, so without
+suitable permissions <code>{dsROCrate}</code> cannot build the Safe
+People, Safe Setting and Safe Output parts of the RO-Crate.</p>
 </div>
-<div id="opal" class="section level1">
-<h1>Opal</h1>
-<p><strong>NOTE:</strong> Opal 5.7+ is required, as that’s when the
-<em>audit</em> role was introduced.</p>
-<div id="required-permissions" class="section level2">
-<h2>Required permissions</h2>
-<p>For Opal backends, the connected user must have at least one of:</p>
-<ul>
-<li>administrator privileges, or</li>
-<li>the <code>Audit system</code> permission.</li>
-</ul>
+<div id="how-the-permission-check-works" class="section level2">
+<h2>How the permission check works</h2>
+<p>Every <code>init()</code>, <code>safe_*()</code> and
+<code>audit()</code> call first runs <code>check_permissions()</code>,
+which you can also call yourself:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>con <span class="ot">&lt;-</span> opalr<span class="sc">::</span><span class="fu">opal.login</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="at">username =</span> <span class="st">&quot;audit_user&quot;</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="at">password =</span> <span class="st">&quot;secret&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">url =</span> <span class="st">&quot;https://opal-demo.obiba.org&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>dsROCrate<span class="sc">::</span><span class="fu">check_permissions</span>(con, <span class="at">verbose =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt; You are ready to audit this system!</span></span></code></pre></div>
+<p>For Opal, the check tries two harmless requests with your
+account:</p>
+<ol style="list-style-type: decimal">
+<li>looking up user accounts, which only administrators are allowed to
+do,</li>
+<li>looking up the DataSHIELD profiles, which administrators and users
+with the <code>Audit system</code> permission are allowed to do.</li>
+</ol>
+<p>The account is accepted when <strong>both succeed</strong> (an
+administrator) or when the <strong>second succeeds and the first is
+refused</strong> (an auditor). Anything else is rejected with the
+error:</p>
+<pre><code>The supplied backend connection does not have sufficient permissions.
+
+{dsROCrate} requires elevated permissions to perform audit operations.
+...</code></pre>
+<p>Other checks run at the same time: the connection must still be
+valid, and the server must be Opal 5.7.2 or later (the
+<code>Audit system</code> permission was introduced in Opal 5.7).</p>
 </div>
-<div id="configuring-an-opal-audit-user" class="section level2">
-<h2>Configuring an Opal audit user</h2>
+<div id="opal-create-an-audit-user" class="section level2">
+<h2>Opal: create an audit user</h2>
+<p><strong>Note:</strong> menu labels may differ slightly between Opal
+versions.</p>
 <div id="step-1-log-in-as-an-administrator" class="section level3">
 <h3>Step 1: Log in as an administrator</h3>
-<p>Log in to the Opal web interface using an administrator account.</p>
+<p>Log in to the Opal web interface with an administrator account.</p>
 </div>
 <div id="step-2-create-a-user-optional" class="section level3">
 <h3>Step 2: Create a user (optional)</h3>
-<p>If a dedicated audit user does not already exist:</p>
+<p>If a dedicated audit user does not exist yet:</p>
 <ol style="list-style-type: decimal">
 <li>Open the <strong>Administration</strong> tab.</li>
 <li>Under <strong>Data Access</strong>, select <strong>Users and
 Groups</strong>.</li>
 <li>Create a new user account for auditing purposes.</li>
 </ol>
+<p>We recommend a dedicated account, separate from the analysts’
+accounts, so the audit user has no more access than it needs.</p>
 </div>
 <div id="step-3-grant-audit-permissions" class="section level3">
 <h3>Step 3: Grant audit permissions</h3>
@@ -423,39 +464,60 @@ Groups</strong>.</li>
 Settings</strong>.</li>
 <li>Open the <strong>Permissions</strong> section.</li>
 <li>Click the <strong>+</strong> button.</li>
-<li>Select:
-<ul>
-<li><strong>Add user permission</strong></li>
-</ul></li>
+<li>Select <strong>Add user permission</strong>.</li>
 <li>Enter the username of the audit user.</li>
-<li>Select:
-<ul>
-<li><strong>Audit system</strong></li>
-</ul></li>
+<li>Select <strong>Audit system</strong>.</li>
 <li>Click <strong>Submit</strong>.</li>
 </ol>
-<hr />
+</div>
+<div id="step-4-check-the-account" class="section level3">
+<h3>Step 4: Check the account</h3>
+<p>Log in as the audit user and run <code>check_permissions()</code>, as
+shown in the previous section. You can now use this connection with
+<code>audit()</code>, see
+<code>vignette(&quot;getting-started&quot;, package = &quot;dsROCrate&quot;)</code>.</p>
 </div>
 </div>
-</div>
-<div id="example-usage" class="section level1">
-<h1>Example usage</h1>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>con <span class="ot">&lt;-</span> opalr<span class="sc">::</span><span class="fu">opal.login</span>(</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="at">username =</span> <span class="st">&quot;audit_user&quot;</span>,</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="at">password =</span> <span class="st">&quot;secret&quot;</span>,</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">url =</span> <span class="st">&quot;https://opal-demo.obiba.org&quot;</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>)</span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>dsROCrate<span class="sc">::</span><span class="fu">check_permissions</span>(con)</span></code></pre></div>
-</div>
-<div id="troubleshooting" class="section level1">
-<h1>Troubleshooting</h1>
-<div id="insufficient-permissions" class="section level2">
-<h2>Insufficient permissions</h2>
-<p>Ensure the connected user has the permissions required for the target
-backend.</p>
-<p>See the backend-specific sections in this vignette for details.</p>
-</div>
+<div id="troubleshooting" class="section level2">
+<h2>Troubleshooting</h2>
+<table>
+<colgroup>
+<col width="29%" />
+<col width="70%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Message</th>
+<th>Likely cause and fix</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>The supplied backend connection does not have sufficient permissions.</code></td>
+<td>The account is neither an administrator nor an auditor. Check that
+the user was granted <strong>Audit system</strong> (step 3) and, if you
+were already logged in when the permission was granted, log in
+again.</td>
+</tr>
+<tr class="even">
+<td><code>Opal &gt;= 5.7.2 is required, but server version is X.Y.Z.</code></td>
+<td>The server is too old. Upgrade Opal.</td>
+</tr>
+<tr class="odd">
+<td><code>The given connection is not valid!</code></td>
+<td>The connection object is no longer usable (e.g., it was saved and
+reloaded, or the session was closed). Create it again with
+<code>opalr::opal.login()</code>.</td>
+</tr>
+<tr class="even">
+<td><code>The `project = &#39;NAME&#39;` was not found in the given Opal connection!</code></td>
+<td>The project name is misspelled, or it does not exist on this
+server.</td>
+</tr>
+</tbody>
+</table>
+<p>If the message is not listed here, please <a href="https://github.com/FederatedMethods/dsROCrate/issues">open an
+issue</a>.</p>
 </div>
 
 

@@ -69,15 +69,15 @@ the \code{opal} or \code{ArmadilloCredentials} classes), an RO-Crate
 (\link[rocrateR:rocrate]{rocrate} class) or a string with the path to an
 RO-Crate.}
 
-\item{...}{Other optional arguments. See the full documentation,
-\code{\link[=safe_people]{?dsROCrate::safe_people}}.}
+\item{...}{Further arguments passed on to the methods, which are documented
+as separate arguments below.}
 
 \item{user}{List (or \link[rocrateR:entity]{entity} object) with details for
 the Safe People, it must include \verb{@id} and \code{name} entries. Alternatively,
 this can be a string with the \code{name} of the current user.}
 
-\item{user_id_suffix}{String with ID suffix for the tables/datasets
-entities in the RO-Crate (default: \code{"#dataset:"}).}
+\item{user_id_suffix}{String with ID suffix for the people/user
+entities in the RO-Crate (default: \code{"#person:"}).}
 
 \item{set_author}{Boolean flag to indicate if the current user should be
 set as the author of the RO-Crate.}
@@ -93,7 +93,7 @@ set to a connection object. If so, then \code{rocrate} is required.}
 be used to store log files. If not provided, logs will be stored within
 the RO-Crate returned by this function.}
 
-\item{profile}{String with profile name (used for OBiBa's Opal backend).}
+\item{profile}{String with profile name.}
 
 \item{project}{String with the name of the \link[=safe_project]{Safe Project}.}
 
